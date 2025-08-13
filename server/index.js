@@ -9,7 +9,10 @@ const app = express();
 
 // app.use(cors());
 app.use(cors({
-  origin: 'https://kartavya212.netlify.app',
+  origin:[
+  'https://kartavya212.netlify.app', // Production
+  'http://localhost:5173'            // Development
+],
   methods: ['GET', 'POST', 'PUT', 'DELETE']
 }));
 app.use(express.json());
