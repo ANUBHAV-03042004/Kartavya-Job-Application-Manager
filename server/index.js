@@ -7,7 +7,11 @@ const sequelize = require('./config/db');
 dotenv.config();
 const app = express();
 
-app.use(cors());
+// app.use(cors());
+app.use(cors({
+  origin: 'https://kartavya212.netlify.app/',
+  methods: ['GET', 'POST', 'PUT', 'DELETE']
+}));
 app.use(express.json());
 
 // Routes
