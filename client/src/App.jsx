@@ -63,18 +63,31 @@ const App = () => {
     fetchApplications();
   }, []);
 
-  return (
-    <div className="container">
-      <h1>Job Application Tracker</h1>
-      {error && <div className="error">{error}</div>}
-      <JobApplicationForm onSubmit={handleSubmit} selectedApplication={selectedApplication} />
-      <JobApplicationList
-        applications={applications}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+return (
+  <div className="container">
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent:'center', gap: '10px' }}>
+      <img
+        src="/kartavya_logo.png"
+        alt="Logo"
+        style={{ height: '80px', width: '80px', objectFit: 'contain' }}
       />
+      <h1>Job Application Tracker</h1>
     </div>
-  );
+
+    {error && <div className="error">{error}</div>}
+
+    <JobApplicationForm
+      onSubmit={handleSubmit}
+      selectedApplication={selectedApplication}
+    />
+
+    <JobApplicationList
+      applications={applications}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+    />
+  </div>
+);
 };
 
 export default App;

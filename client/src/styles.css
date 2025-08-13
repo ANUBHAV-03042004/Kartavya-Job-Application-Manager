@@ -5,7 +5,7 @@ body {
     background-color: #f4f4f9;
     color: #333;
   }
-  
+      #action{ display:flex}
   .container {
     max-width: 1200px;
     margin: 0 auto;

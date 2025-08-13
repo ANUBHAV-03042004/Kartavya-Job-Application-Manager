@@ -1,13 +1,21 @@
-const mongoose = require('mongoose');
+// models/JobApplication.js
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/db');
 
-const jobApplicationSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  companyName: { type: String, required: true },
-  jobTitle: { type: String, required: true },
-  applicationDate: { type: Date, required: true },
-  status: { type: String, required: true, enum: ['Applied', 'Interview', 'Offer', 'Rejected'] },
-  jobLink: { type: String, required: false },
-  notes: { type: String, required: false },
+const JobApplication = sequelize.define('JobApplication', {
+  id: { type: DataTypes.STRING, allowNull: false, primaryKey: true },
+  companyName: { type: DataTypes.STRING, allowNull: false },
+  jobTitle: { type: DataTypes.STRING, allowNull: false },
+  applicationDate: { type: DataTypes.DATE, allowNull: false },
+  status: { 
+    type: DataTypes.ENUM('Applied', 'Interview', 'Offer', 'Rejected'), 
+    allowNull: false 
+  },
+  jobLink: { type: DataTypes.STRING },
+  notes: { type: DataTypes.TEXT },
+}, {
+  tableName: 'job_applications',
+  timestamps: false
 });
 
-module.exports = mongoose.model('JobApplication', jobApplicationSchema);
+module.exports = JobApplication;

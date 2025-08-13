@@ -36,7 +36,7 @@ const JobApplicationList = ({ applications, onEdit, onDelete }) => {
                   )}
                 </td>
                 <td>{app.notes || '-'}</td>
-                <td>
+                <td id="action">
                   <button
                     className="button button-primary"
                     onClick={() => onEdit(app)}
