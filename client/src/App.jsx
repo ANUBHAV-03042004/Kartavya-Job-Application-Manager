@@ -3,7 +3,7 @@ import JobApplicationForm from './components/JobApplicationForm';
 import JobApplicationList from './components/JobApplicationList';
 
 const App = () => {
-  const API_BASE_URL = import.meta.env.API_BASE_URL;
+  const API_BASE_URL = import.meta.env.API_BASE_URL || `https://kartavya-job-application-manager.onrender.com`;
   const [applications, setApplications] = useState([]);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [error, setError] = useState('');
