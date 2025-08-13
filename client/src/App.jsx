@@ -3,13 +3,14 @@ import JobApplicationForm from './components/JobApplicationForm';
 import JobApplicationList from './components/JobApplicationList';
 
 const App = () => {
+  const API_BASE_URL = import.meta.env.API_BASE_URL;
   const [applications, setApplications] = useState([]);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [error, setError] = useState('');
 
   const fetchApplications = async () => {
     try {
-      const response = await fetch('/api/job-applications');
+      const response = await fetch(`${API_BASE_URL}/api/job-applications`);
       const data = await response.json();
       setApplications(data);
     } catch (err) {
@@ -21,7 +22,7 @@ const App = () => {
     try {
       if (selectedApplication) {
         // Update
-        const response = await fetch(`/api/job-applications/${formData.id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/job-applications/${formData.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
@@ -29,7 +30,7 @@ const App = () => {
         if (!response.ok) throw new Error('Failed to update');
       } else {
         // Create
-        const response = await fetch('/api/job-applications', {
+        const response = await fetch(`${API_BASE_URL}/api/job-applications`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
@@ -49,7 +50,7 @@ const App = () => {
 
   const handleDelete = async (id) => {
     try {
-      const response = await fetch(`/api/job-applications/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/job-applications/${id}`, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete');
