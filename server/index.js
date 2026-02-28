@@ -54,9 +54,10 @@ app.use('/api/auth', require('./routes/Auth'));
 app.use('/api/job-applications', require('./routes/JobApplication'));
 
 // Sync DB
-sequelize.sync().then(() => {
-  console.log('✅ Database synced');
+sequelize.sync({ alter: true }).then(() => {
+  console.log('✅ Database synced (schema updated if needed)');
+}).catch(err => {
+  console.error('❌ Database sync failed:', err.message);
 });
-
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
