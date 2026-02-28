@@ -140,7 +140,7 @@
 
 
 import React, { useState, useEffect, useCallback } from 'react';
-import AuthPage from './components/AuthPage';
+import AuthPage from './auth/AuthPage';
 import Dashboard from './components/Dashboard';
 import './styles.css';
 
