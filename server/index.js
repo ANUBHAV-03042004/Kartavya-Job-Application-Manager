@@ -50,7 +50,7 @@ app.use(cors({
 app.use(express.json());
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));// changed route path
+app.use('/api/auth', require('./routes/Auth'));
 app.use('/api/job-applications', require('./routes/JobApplication'));
 
 // Sync DB
