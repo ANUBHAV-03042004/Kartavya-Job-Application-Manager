@@ -59,7 +59,7 @@
 const express = require('express');
 const router = express.Router();
 const JobApplication = require('../models/JobApplication');
-const authMiddleware = require('../middleware/auth');
+const authMiddleware = require('../middleware/Auth');
 
 // All routes protected
 router.use(authMiddleware);
