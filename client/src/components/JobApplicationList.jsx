@@ -492,112 +492,252 @@
 
 
 
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import JobApplicationForm from './JobApplicationForm';
+import JobApplicationList from './JobApplicationList';
+import Analytics          from './Analytics';
+import Settings           from './Settings';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://kartavya-job-application-manager.onrender.com';
 
-const S = {
-  Applied:   { color:'var(--sky)',    bg:'var(--sky-light)',    emoji:'📤' },
-  Interview: { color:'var(--banana)', bg:'var(--banana-light)', emoji:'🎯' },
-  Offer:     { color:'var(--green)',  bg:'var(--green-light)',  emoji:'🎉' },
-  Rejected:  { color:'var(--terra)',  bg:'var(--terra-light)',  emoji:'✖'  },
-};
+export default function Dashboard({ user, token, onLogout, onUserUpdate }) {
+  const [view,        setView]        = useState('apps');
+  const [apps,        setApps]        = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState('');
+  const [editing,     setEditing]     = useState(null);   // app being edited
+  const [showForm,    setShowForm]    = useState(false);  // new-app form visible
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-function Card({ app, onEdit, onDelete }) {
-  const [open, setOpen] = useState(false);
-  const c = S[app.status] || S.Applied;
-  return (
-    <div className={`app-card ${open?'expanded':''}`} onClick={()=>setOpen(o=>!o)}>
-      <div className="ac-top">
-        <div className="ac-left">
-          <div className="ac-logo" style={{background:c.bg, color:c.color}}>{app.companyName[0].toUpperCase()}</div>
-          <div>
-            <div className="ac-company">{app.companyName}</div>
-            <div className="ac-role">{app.jobTitle}</div>
-          </div>
-        </div>
-        <span className="ac-badge" style={{color:c.color, background:c.bg}}>{c.emoji} {app.status}</span>
-      </div>
+  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
-      <div className="ac-meta">
-        <span>📅 {new Date(app.applicationDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
-        {app.jobLink && <a href={app.jobLink} target="_blank" rel="noopener noreferrer" className="ac-link" onClick={e=>e.stopPropagation()}>↗ View</a>}
-      </div>
-
-      {open && app.notes && <div className="ac-notes">{app.notes}</div>}
-
-      <div className="ac-actions" onClick={e=>e.stopPropagation()}>
-        <button className="ac-btn edit" onClick={()=>onEdit(app)}>Edit</button>
-        <button className="ac-btn del"  onClick={()=>{ if(window.confirm('Delete this application?')) onDelete(app.id); }}>Delete</button>
-      </div>
-      <div className="ac-hint">{open?'▲':'▼'}</div>
-    </div>
-  );
-}
-
-export default function JobApplicationList({ apps, loading, token, onEdit, onRefresh, onError }) {
-  const [filter, setFilter] = useState('All');
-  const [search, setSearch] = useState('');
-
-  const del = async (id) => {
+  const fetchApps = async () => {
     try {
-      const res = await fetch(`${API}/api/job-applications/${id}`, {
-        method:'DELETE', headers:{Authorization:`Bearer ${token}`}
-      });
-      if (!res.ok) { const d=await res.json(); throw new Error(d.message); }
-      onRefresh();
-    } catch(e) { onError(e.message); }
+      setLoading(true);
+      const res  = await fetch(`${API}/api/job-applications`, { headers });
+      if (res.status === 401) { onLogout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setApps(data);
+    } catch (e) { setError('Failed to load applications'); }
+    finally { setLoading(false); }
   };
 
-  const shown = apps.filter(a => {
-    const mf = filter==='All' || a.status===filter;
-    const ms = !search || a.companyName.toLowerCase().includes(search.toLowerCase()) || a.jobTitle.toLowerCase().includes(search.toLowerCase());
-    return mf && ms;
-  });
+  useEffect(() => { fetchApps(); }, []);
 
-  const filters = ['All','Applied','Interview','Offer','Rejected'];
+  // ── Called when user clicks Edit on a card ──────────────────
+  // Sets the editing app and shows form; form renders ABOVE the list
+  const handleEdit = (app) => {
+    setEditing(app);
+    setShowForm(false); // close new-app form if open
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  if (loading) return <div className="grid">{[1,2,3].map(i=><div key={i} className="skel" />)}</div>;
+  const handleFormClose = () => {
+    setEditing(null);
+    setShowForm(false);
+  };
+
+  const handleSaved = () => {
+    handleFormClose();
+    fetchApps();
+  };
+
+  const stats = {
+    total:     apps.length,
+    applied:   apps.filter(a => a.status === 'Applied').length,
+    interview: apps.filter(a => a.status === 'Interview').length,
+    offer:     apps.filter(a => a.status === 'Offer').length,
+    rejected:  apps.filter(a => a.status === 'Rejected').length,
+  };
+
+  const navItems = [
+    { id: 'apps',      label: 'Applications', icon: <AppIcon /> },
+    { id: 'analytics', label: 'Analytics',    icon: <ChartIcon /> },
+    { id: 'settings',  label: 'Settings',     icon: <SettingsIcon /> },
+  ];
 
   return (
-    <div>
-      <div className="toolbar">
-        <div className="search-box">
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search company or role…" />
-          {search && <button className="sc" onClick={()=>setSearch('')}>✕</button>}
+    <div className="dash">
+      {sidebarOpen && <div className="sb-overlay" onClick={() => setSidebarOpen(false)} />}
+
+      {/* ── Sidebar ───────────────────────────────────────── */}
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+        <div className="sb-brand">
+          <img src="/kartavya_logo.png" alt="Kartavya" className="sb-logo" />
+          <div>
+            <div className="sb-brand-name">KARTAVYA</div>
+            <div className="sb-brand-sub">Job Application Manager</div>
+          </div>
         </div>
-        <div className="filter-row">
-          {filters.map(f=>(
-            <button key={f} className={`fp ${filter===f?'active':''}`}
-              style={filter===f&&f!=='All'?{'--fc':S[f]?.color,'--fb':S[f]?.bg}:{}}
-              onClick={()=>setFilter(f)}>
-              {f!=='All' && <span className="fd" style={{background:S[f]?.color}} />}
-              {f}<span className="fc">{f==='All'?apps.length:apps.filter(a=>a.status===f).length}</span>
+
+        <div className="sb-user">
+          <div className="sb-avatar">{user.name[0].toUpperCase()}</div>
+          <div>
+            <div className="sb-uname">{user.name}</div>
+            <div className="sb-uemail">{user.email}</div>
+          </div>
+        </div>
+
+        <nav className="sb-nav">
+          {navItems.map(({ id, label, icon }) => (
+            <button
+              key={id}
+              className={`sb-item ${view === id ? 'active' : ''}`}
+              onClick={() => { setView(id); setSidebarOpen(false); }}
+            >
+              {icon}{label}
             </button>
           ))}
+        </nav>
+
+        <div className="sb-stats">
+          <div className="sb-stats-ttl">Pipeline</div>
+          {[
+            { l: 'Applied',   v: stats.applied,   c: 'sky'    },
+            { l: 'Interview', v: stats.interview, c: 'banana' },
+            { l: 'Offer',     v: stats.offer,     c: 'green'  },
+            { l: 'Rejected',  v: stats.rejected,  c: 'terra'  },
+          ].map(s => (
+            <div key={s.l} className="sb-stat">
+              <span className={`sdot ${s.c}`} />{s.l}
+              <span className="sval">{s.v}</span>
+            </div>
+          ))}
+        </div>
+
+        <button className="sb-logout" onClick={onLogout}>
+          <LogoutIcon /> Sign Out
+        </button>
+      </aside>
+
+      {/* ── Main ──────────────────────────────────────────── */}
+      <div className="dash-main">
+        {/* Mobile topbar */}
+        <div className="topbar">
+          <button className="menu-btn" onClick={() => setSidebarOpen(true)}><MenuIcon /></button>
+          <div className="topbar-brand">
+            <img src="/kartavya_logo.png" alt="" className="topbar-logo" />
+            <span>KARTAVYA</span>
+          </div>
+          <div className="topbar-av">{user.name[0].toUpperCase()}</div>
+        </div>
+
+        {error && (
+          <div className="err-banner">
+            {error}
+            <button onClick={() => setError('')}>✕</button>
+          </div>
+        )}
+
+        <div className="view-wrap">
+
+          {/* ── Applications view ───────────────────────── */}
+          {view === 'apps' && (
+            <>
+              {/* Header row */}
+              <div className="view-header">
+                <div>
+                  <h1 className="view-title">My Applications</h1>
+                  <p className="view-sub">
+                    {stats.total} total · {stats.interview} in interview · {stats.offer} offer{stats.offer !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <button
+                  className="btn-primary"
+                  onClick={() => {
+                    setEditing(null);          // clear any edit
+                    setShowForm(s => !s);
+                  }}
+                >
+                  {showForm ? '✕ Close' : '+ New Application'}
+                </button>
+              </div>
+
+              {/* ── NEW APPLICATION form — always above list ── */}
+              {showForm && !editing && (
+                <div style={{ marginBottom: 24 }}>
+                  <JobApplicationForm
+                    token={token}
+                    selectedApplication={null}
+                    onCancel={handleFormClose}
+                    onSaved={handleSaved}
+                  />
+                </div>
+              )}
+
+              {/* ── EDIT form — always above list ── */}
+              {editing && (
+                <div style={{ marginBottom: 24 }}>
+                  {/* Banner so user knows which card they're editing */}
+                  <div className="edit-banner">
+                    ✏️ Editing <strong>{editing.companyName} — {editing.jobTitle}</strong>
+                    <button onClick={handleFormClose}>✕ Cancel</button>
+                  </div>
+                  <JobApplicationForm
+                    token={token}
+                    selectedApplication={editing}
+                    onCancel={handleFormClose}
+                    onSaved={handleSaved}
+                  />
+                </div>
+              )}
+
+              {/* ── Application list — editing card is dimmed ── */}
+              <JobApplicationList
+                apps={apps}
+                loading={loading}
+                token={token}
+                editingId={editing?.id ?? null}   // ← passed down to dim the card
+                onEdit={handleEdit}
+                onRefresh={fetchApps}
+                onError={setError}
+              />
+            </>
+          )}
+
+          {view === 'analytics' && <Analytics apps={apps} />}
+          {view === 'settings'  && (
+            <Settings
+              user={user} token={token}
+              onLogout={onLogout} onUserUpdate={onUserUpdate}
+            />
+          )}
         </div>
       </div>
-
-      {shown.length === 0
-        ? apps.length === 0
-          ? (
-            <div className="empty-video-wrap">
-              <video
-                src="/dashboard.mp4"
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="empty-video"
-              />
-              <p className="empty-video-text">No applications yet — add your first one to get started!</p>
-            </div>
-          )
-          : <div className="empty"><p>No results match your filters.</p></div>
-        : <div className="grid">{shown.map(app=><Card key={app.id} app={app} onEdit={onEdit} onDelete={del} />)}</div>
-      }
     </div>
   );
 }
+
+/* ── Icons ─────────────────────────────────────────────────────── */
+const AppIcon = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+  </svg>
+);
+const ChartIcon = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+    <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+  </svg>
+);
+const SettingsIcon = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+  </svg>
+);
+const LogoutIcon = () => (
+  <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+    <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+);
+const MenuIcon = () => (
+  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+);
