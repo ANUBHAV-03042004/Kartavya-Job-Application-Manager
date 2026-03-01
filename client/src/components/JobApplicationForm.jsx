@@ -141,119 +141,127 @@
 
 
 
+
+
+
+
+
+
+
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-const JobApplicationForm = ({ onSubmit, selectedApplication }) => {
-  const [formData, setFormData] = useState({
-    id: '',
-    companyName: '',
-    jobTitle: '',
-    applicationDate: '',
-    status: 'Applied',
-    jobLink: '',
-    notes: '',
-  });
+const API = import.meta.env.VITE_API_BASE_URL || 'https://kartavya-job-application-manager.onrender.com';
+
+const STATUS_OPTIONS = [
+  { value: 'Applied',   color: '#00bbf9' },
+  { value: 'Interview', color: '#fee440' },
+  { value: 'Offer',     color: '#00f5d4' },
+  { value: 'Rejected',  color: '#f15bb5' },
+];
+
+export default function JobApplicationForm({ token, selectedApplication, onCancel, onSaved }) {
+  const blank = {
+    id:              uuidv4(),
+    companyName:     '',
+    jobTitle:        '',
+    applicationDate: new Date().toISOString().split('T')[0],
+    status:          'Applied',
+    jobLink:         '',
+    notes:           '',
+  };
+
+  const [form,  setForm]  = useState(blank);
   const [error, setError] = useState('');
+  const [busy,  setBusy]  = useState(false);
 
   useEffect(() => {
     if (selectedApplication) {
-      setFormData({
+      setForm({
         ...selectedApplication,
         applicationDate: selectedApplication.applicationDate?.split('T')[0] || '',
       });
     } else {
-      setFormData({
-        id: uuidv4(),
-        companyName: '',
-        jobTitle: '',
-        applicationDate: new Date().toISOString().split('T')[0],
-        status: 'Applied',
-        jobLink: '',
-        notes: '',
-      });
+      setForm({ ...blank, id: uuidv4() });
     }
   }, [selectedApplication]);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError('');
-  };
+  const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setError(''); };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.companyName || !formData.jobTitle || !formData.applicationDate) {
+    if (!form.companyName || !form.jobTitle || !form.applicationDate) {
       setError('Please fill in all required fields');
       return;
     }
+    setBusy(true);
     try {
-      await onSubmit(formData);
-    } catch {
-      setError('Failed to save application');
+      const isEdit = !!selectedApplication;
+      const res = await fetch(
+        `${API}/api/job-applications${isEdit ? '/' + form.id : ''}`,
+        {
+          method:  isEdit ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body:    JSON.stringify(form),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      onSaved();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
     }
   };
 
-  const statusOptions = [
-    { value: 'Applied', color: '#3b82f6' },
-    { value: 'Interview', color: '#f59e0b' },
-    { value: 'Offer', color: '#10b981' },
-    { value: 'Rejected', color: '#ef4444' },
-  ];
-
   return (
-    <div className="form-card">
-      <div className="form-card-header">
+    <div className="form-card slide-down">
+      <div className="form-head">
         <h2>{selectedApplication ? '✏️ Edit Application' : '✨ New Application'}</h2>
-        {error && <span className="form-error">{error}</span>}
+        <button className="icon-btn" onClick={onCancel} type="button">✕</button>
       </div>
+
+      {error && <div className="msg error" style={{ margin: '0 20px 12px' }}>{error}</div>}
 
       <form onSubmit={handleSubmit} className="app-form">
         <div className="form-row">
-          <div className="form-field">
+          <div className="ff">
             <label>Company Name <span>*</span></label>
             <input
-              type="text"
-              name="companyName"
-              value={formData.companyName}
-              onChange={handleChange}
-              placeholder="e.g. Google, Meta, Apple"
-              required
+              type="text" value={form.companyName} required
+              onChange={e => set('companyName', e.target.value)}
+              placeholder="Google, Meta, Stripe…"
             />
           </div>
-          <div className="form-field">
+          <div className="ff">
             <label>Job Title <span>*</span></label>
             <input
-              type="text"
-              name="jobTitle"
-              value={formData.jobTitle}
-              onChange={handleChange}
-              placeholder="e.g. Senior Engineer"
-              required
+              type="text" value={form.jobTitle} required
+              onChange={e => set('jobTitle', e.target.value)}
+              placeholder="Senior Engineer"
             />
           </div>
         </div>
 
         <div className="form-row">
-          <div className="form-field">
-            <label>Application Date <span>*</span></label>
+          <div className="ff">
+            <label>Date Applied <span>*</span></label>
             <input
-              type="date"
-              name="applicationDate"
-              value={formData.applicationDate}
-              onChange={handleChange}
-              required
+              type="date" value={form.applicationDate} required
+              onChange={e => set('applicationDate', e.target.value)}
             />
           </div>
-          <div className="form-field">
+          <div className="ff">
             <label>Status <span>*</span></label>
-            <div className="status-selector">
-              {statusOptions.map(({ value, color }) => (
+            <div className="status-pick">
+              {STATUS_OPTIONS.map(({ value, color }) => (
                 <button
                   key={value}
                   type="button"
-                  className={`status-option ${formData.status === value ? 'active' : ''}`}
-                  style={{ '--status-color': color }}
-                  onClick={() => setFormData({ ...formData, status: value })}
+                  className={`sp-btn ${form.status === value ? 'active' : ''}`}
+                  style={form.status === value ? { '--sc': color, '--sb': `${color}20` } : {}}
+                  onClick={() => set('status', value)}
                 >
                   {value}
                 </button>
@@ -262,39 +270,31 @@ const JobApplicationForm = ({ onSubmit, selectedApplication }) => {
           </div>
         </div>
 
-        <div className="form-field">
+        <div className="ff">
           <label>Job Link</label>
           <input
-            type="url"
-            name="jobLink"
-            value={formData.jobLink}
-            onChange={handleChange}
-            placeholder="https://..."
+            type="url" value={form.jobLink}
+            onChange={e => set('jobLink', e.target.value)}
+            placeholder="https://…"
           />
         </div>
 
-        <div className="form-field">
+        <div className="ff">
           <label>Notes</label>
           <textarea
-            name="notes"
-            value={formData.notes}
-            onChange={handleChange}
-            placeholder="Interview rounds, salary range, recruiter name..."
-            rows={3}
+            rows={3} value={form.notes}
+            onChange={e => set('notes', e.target.value)}
+            placeholder="Salary range, recruiter name, interview rounds…"
           />
         </div>
 
-        <div className="form-actions">
-          <button type="submit" className="btn-primary">
-            {selectedApplication ? 'Update Application' : 'Add Application'}
+        <div className="form-btns">
+          <button type="submit" className="btn-primary" disabled={busy}>
+            {busy ? <span className="spinner" /> : (selectedApplication ? 'Update Application' : 'Add Application')}
           </button>
-          <button type="button" className="btn-ghost" onClick={() => onSubmit(null)}>
-            Cancel
-          </button>
+          <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
         </div>
       </form>
     </div>
   );
-};
-
-export default JobApplicationForm;
+}
