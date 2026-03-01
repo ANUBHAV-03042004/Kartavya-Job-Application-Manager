@@ -568,7 +568,7 @@ html, body, #root {
 /* ── Sidebar ── */
 .sidebar {
   width: var(--sidebar-w); min-height: 100vh;
-  background: #5C8001;
+  background: #7CB518;
   display: flex; flex-direction: column;
   position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0;
 }
@@ -658,7 +658,7 @@ req { color: var(--flame); font-style: normal; }
 ══════════════════════════════════════════════════════════════════ */
 .btn-primary {
   padding: 10px 22px;
-  background: #7CB518;
+  background: #5C8001;
   color: #000; border: none; border-radius: 8px;
   font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 900;
   cursor: pointer; transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
