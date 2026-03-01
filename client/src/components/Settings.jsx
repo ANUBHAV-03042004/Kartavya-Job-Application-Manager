@@ -265,7 +265,6 @@
 
 
 
-
 import React, { useState } from 'react';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://kartavya-job-application-manager.onrender.com';
@@ -297,18 +296,21 @@ const getAvColor = (str = 'U') => AV_COLORS[str.charCodeAt(0) % AV_COLORS.length
 // OAuth detection — triple-check to cover all backend serialisation
 // variants: oauthProvider field set OR password is null/absent
 // ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────
+// OAuth detection — ONLY check oauthProvider.
+// The backend's userDTO now always sends oauthProvider: 'google' | 'github' | null.
+// Email-registered users get oauthProvider: null  → isOAuthUser = false → show password fields.
+// Google/GitHub users get oauthProvider: 'google'/'github' → isOAuthUser = true → hide them.
+//
+// DO NOT check user.password — userDTO never sends it, so it is always
+// undefined for every user (email and OAuth alike), which would incorrectly
+// treat ALL users as OAuth.
+// ─────────────────────────────────────────────────────────────────
 function detectOAuth(user) {
   if (!user) return false;
-  // PRIMARY: oauthProvider field sent by backend ('google' | 'github')
-  // NOTE: this only works if the backend's userDTO includes oauthProvider.
-  // The fixed Auth.js routes/Auth.js now includes it in every response.
-  if (user.oauthProvider) return true;
-  // FALLBACK A: some backends serialize as `provider`
-  if (user.provider && user.provider !== 'local') return true;
-  // FALLBACK B: OAuth users have password: null in DB.
-  // Also catch `undefined` — userDTO never sends password at all.
-  if (user.password === null || user.password === undefined) return true;
-  return false;
+  // oauthProvider is 'google' or 'github' for OAuth users, null for email users.
+  // Auth.js userDTO now always includes this field.
+  return !!(user.oauthProvider);
 }
 
 export default function Settings({ user, token, onLogout }) {
