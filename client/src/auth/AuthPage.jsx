@@ -25,16 +25,14 @@ export default function AuthPage({ onAuthSuccess }) {
   const [loading,    setLoading]    = useState(false);
   const [forgotStep, setForgotStep] = useState(1);
   const [forgotCtx,  setForgotCtx]  = useState({ email:'', question:'', token:'' });
-  const [oauthMsg,   setOauthMsg]   = useState('');
+
 
   const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setError(''); setSuccess(''); };
-  const go  = (v)    => { setView(v); setError(''); setSuccess(''); setForgotStep(1); setOauthMsg(''); };
+  const go  = (v)    => { setView(v); setError(''); setSuccess(''); setForgotStep(1); };
 
-  // ── OAuth — shows friendly message since backend not configured yet ──
+  // ── OAuth — real redirect to backend ─────────────────────────────
   const oauthLogin = (provider) => {
-    // Once you add passport-google-oauth20 / passport-github2 to backend,
-    // uncomment: window.location.href = `${API}/api/auth/${provider}`;
-    setOauthMsg(`${provider === 'google' ? 'Google' : 'GitHub'} sign-in requires backend OAuth setup. See the backend guide below, or sign in with email for now.`);
+    window.location.href = `${API}/api/auth/${provider}`;
   };
 
   const handleLogin = async () => {
@@ -177,7 +175,7 @@ export default function AuthPage({ onAuthSuccess }) {
                   <GitHubIcon /> Continue with GitHub
                 </button>
               </div>
-              {oauthMsg && <div className="msg warn" style={{marginBottom:4}}>{oauthMsg}</div>}
+
               <div className="oauth-div"><span>or sign in with email</span></div>
 
               {error   && <div className="msg error">{error}</div>}
@@ -228,7 +226,7 @@ export default function AuthPage({ onAuthSuccess }) {
                   <GitHubIcon /> Continue with GitHub
                 </button>
               </div>
-              {oauthMsg && <div className="msg warn" style={{marginBottom:4}}>{oauthMsg}</div>}
+
               <div className="oauth-div"><span>or create account with email</span></div>
 
               {error   && <div className="msg error">{error}</div>}
