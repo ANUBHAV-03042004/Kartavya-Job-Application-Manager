@@ -16,7 +16,7 @@ const JobApplication = sequelize.define('JobApplication', {
   notes:   { type: DataTypes.TEXT   },
 }, {
   tableName:  'job_applications',
-  timestamps: false,
+  timestamps: true,   // ← enables createdAt + updatedAt columns
 });
 
 User.hasMany(JobApplication, { foreignKey: 'userId', onDelete: 'CASCADE' });

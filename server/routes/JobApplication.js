@@ -56,7 +56,6 @@
 
 
 
-
 const express        = require('express');
 const router         = express.Router();
 const JobApplication = require('../models/JobApplication');
@@ -75,7 +74,7 @@ router.get('/', async (req, res) => {
   try {
     const apps = await JobApplication.findAll({
       where: { userId: req.userId },
-      order: [['applicationDate', 'DESC']],
+      order: [['updatedAt', 'DESC']],  // ← most recently created/updated first
     });
     res.json(apps);
   } catch (err) { res.status(500).json({ message: err.message }); }
