@@ -264,8 +264,7 @@
 
 
 
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://kartavya-job-application-manager.onrender.com';
 
@@ -297,20 +296,26 @@ const getAvColor = (str = 'U') => AV_COLORS[str.charCodeAt(0) % AV_COLORS.length
 // variants: oauthProvider field set OR password is null/absent
 // ─────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────
-// OAuth detection — ONLY check oauthProvider.
-// The backend's userDTO now always sends oauthProvider: 'google' | 'github' | null.
-// Email-registered users get oauthProvider: null  → isOAuthUser = false → show password fields.
-// Google/GitHub users get oauthProvider: 'google'/'github' → isOAuthUser = true → hide them.
+// OAuth detection — only true when oauthProvider is explicitly a
+// non-empty string ('google' or 'github').
 //
-// DO NOT check user.password — userDTO never sends it, so it is always
-// undefined for every user (email and OAuth alike), which would incorrectly
-// treat ALL users as OAuth.
+// IMPORTANT:
+//   • Email users  → oauthProvider: null   → returns false → show password fields
+//   • Google users → oauthProvider: 'google' → returns true  → hide password fields
+//   • GitHub users → oauthProvider: 'github' → returns true  → hide password fields
+//
+// We NEVER use `user.password` for this check — userDTO doesn't send it,
+// so it is always `undefined` for every user and would give false positives.
+//
+// If the stored user object (localStorage) predates the Auth.js fix and is
+// missing oauthProvider, the user will be treated as a local account (safe
+// default — they see the password field, which is correct for email users).
 // ─────────────────────────────────────────────────────────────────
 function detectOAuth(user) {
   if (!user) return false;
-  // oauthProvider is 'google' or 'github' for OAuth users, null for email users.
-  // Auth.js userDTO now always includes this field.
-  return !!(user.oauthProvider);
+  const p = user.oauthProvider;
+  // Only true when oauthProvider is a non-empty, non-null string
+  return typeof p === 'string' && p.length > 0;
 }
 
 export default function Settings({ user, token, onLogout }) {
@@ -318,6 +323,28 @@ export default function Settings({ user, token, onLogout }) {
   const isOAuthUser = detectOAuth(user);
   // Which provider name to display ('google', 'github', or generic 'OAuth')
   const providerName = user?.oauthProvider || user?.provider || 'OAuth';
+
+  // ── Self-heal: if stored user is missing oauthProvider (old localStorage),
+  // fetch /me to get the fresh user object so OAuth detection works correctly.
+  useEffect(() => {
+    if (user && !('oauthProvider' in user)) {
+      fetch(`${API}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(r => r.ok ? r.json() : null)
+        .then(fresh => {
+          if (fresh && typeof fresh.oauthProvider !== 'undefined') {
+            // Merge oauthProvider into stored user and persist
+            const updated = { ...user, oauthProvider: fresh.oauthProvider };
+            localStorage.setItem('kv_user', JSON.stringify(updated));
+            // Reload page so Settings re-mounts with the correct user object
+            window.location.reload();
+          }
+        })
+        .catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [pw,     setPw]     = useState({ current: '', next: '', confirm: '' });
   const [pwMsg,  setPwMsg]  = useState({ type: '', text: '' });
