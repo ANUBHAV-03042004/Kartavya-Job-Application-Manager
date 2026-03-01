@@ -1479,16 +1479,17 @@
 
 
 
-
 import React, { useState } from 'react';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://kartavya-job-application-manager.onrender.com';
 
+// These colors are ONLY for the card badge chip and logo avatar.
+// Filter pills and status-pick buttons always use #7CB518 for active — never these.
 const S = {
-  Applied:   { color:'var(--sky)',    bg:'var(--sky-light)',    emoji:'📤' },
-  Interview: { color:'var(--banana)', bg:'var(--banana-light)', emoji:'🎯' },
-  Offer:     { color:'#7CB518',       bg:'rgba(124,181,24,0.12)', emoji:'🎉' },
-  Rejected:  { color:'var(--terra)',  bg:'var(--terra-light)',  emoji:'✖'  },
+  Applied:   { color:'#3B82F6', bg:'rgba(59,130,246,0.12)',  emoji:'📤' },
+  Interview: { color:'#F59E0B', bg:'rgba(245,158,11,0.12)',  emoji:'🎯' },
+  Offer:     { color:'#7CB518', bg:'rgba(124,181,24,0.12)',  emoji:'🎉' },
+  Rejected:  { color:'#EF4444', bg:'rgba(239,68,68,0.12)',   emoji:'✖'  },
 };
 
 function Card({ app, onEdit, onDelete }) {
@@ -1498,18 +1499,26 @@ function Card({ app, onEdit, onDelete }) {
     <div className={`app-card ${open?'expanded':''}`} onClick={()=>setOpen(o=>!o)}>
       <div className="ac-top">
         <div className="ac-left">
-          <div className="ac-logo" style={{background:c.bg, color:c.color}}>{app.companyName[0].toUpperCase()}</div>
+          <div className="ac-logo" style={{background:c.bg, color:c.color}}>
+            {app.companyName[0].toUpperCase()}
+          </div>
           <div>
             <div className="ac-company">{app.companyName}</div>
             <div className="ac-role">{app.jobTitle}</div>
           </div>
         </div>
-        <span className="ac-badge" style={{color:c.color, background:c.bg}}>{c.emoji} {app.status}</span>
+        {/* Badge: always its own status color, never changes on click */}
+        <span className="ac-badge" style={{color:c.color, background:c.bg}}>
+          {c.emoji} {app.status}
+        </span>
       </div>
 
       <div className="ac-meta">
         <span>📅 {new Date(app.applicationDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
-        {app.jobLink && <a href={app.jobLink} target="_blank" rel="noopener noreferrer" className="ac-link" onClick={e=>e.stopPropagation()}>↗ View</a>}
+        {app.jobLink && (
+          <a href={app.jobLink} target="_blank" rel="noopener noreferrer"
+            className="ac-link" onClick={e=>e.stopPropagation()}>↗ View</a>
+        )}
       </div>
 
       {open && app.notes && <div className="ac-notes">{app.notes}</div>}
@@ -1537,9 +1546,18 @@ export default function JobApplicationList({ apps, loading, token, onEdit, onRef
     } catch(e) { onError(e.message); }
   };
 
-  const shown = apps.filter(a => {
-    const mf = filter==='All' || a.status===filter;
-    const ms = !search || a.companyName.toLowerCase().includes(search.toLowerCase()) || a.jobTitle.toLowerCase().includes(search.toLowerCase());
+  // Sort newest first: prefer updatedAt, fall back to createdAt, then applicationDate
+  const sorted = [...apps].sort((a, b) => {
+    const ta = new Date(a.updatedAt || a.createdAt || a.applicationDate).getTime();
+    const tb = new Date(b.updatedAt || b.createdAt || b.applicationDate).getTime();
+    return tb - ta;
+  });
+
+  const shown = sorted.filter(a => {
+    const mf = filter === 'All' || a.status === filter;
+    const ms = !search
+      || a.companyName.toLowerCase().includes(search.toLowerCase())
+      || a.jobTitle.toLowerCase().includes(search.toLowerCase());
     return mf && ms;
   });
 
@@ -1551,17 +1569,25 @@ export default function JobApplicationList({ apps, loading, token, onEdit, onRef
     <div>
       <div className="toolbar">
         <div className="search-box">
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search company or role…" />
           {search && <button className="sc" onClick={()=>setSearch('')}>✕</button>}
         </div>
         <div className="filter-row">
-          {filters.map(f=>(
-            <button key={f} className={`fp ${filter===f?'active':''}`}
-              style={filter===f&&f!=='All'?{'--fc':S[f]?.color,'--fb':S[f]?.bg}:{}}
-              onClick={()=>setFilter(f)}>
-              {f!=='All' && <span className="fd" style={{background:S[f]?.color}} />}
-              {f}<span className="fc">{f==='All'?apps.length:apps.filter(a=>a.status===f).length}</span>
+          {filters.map(f => (
+            <button
+              key={f}
+              className={`fp ${filter===f ? 'active' : ''}`}
+              onClick={() => setFilter(f)}
+            >
+              {/* Dot keeps its own status color for visual identity */}
+              {f !== 'All' && <span className="fd" style={{background: S[f]?.color}} />}
+              {f}
+              <span className="fc">
+                {f === 'All' ? apps.length : apps.filter(a => a.status === f).length}
+              </span>
             </button>
           ))}
         </div>
@@ -1576,7 +1602,7 @@ export default function JobApplicationList({ apps, loading, token, onEdit, onRef
             </div>
           )
           : <div className="empty"><p>No results match your filters.</p></div>
-        : <div className="grid">{shown.map(app=><Card key={app.id} app={app} onEdit={onEdit} onDelete={del} />)}</div>
+        : <div className="grid">{shown.map(app => <Card key={app.id} app={app} onEdit={onEdit} onDelete={del} />)}</div>
       }
     </div>
   );

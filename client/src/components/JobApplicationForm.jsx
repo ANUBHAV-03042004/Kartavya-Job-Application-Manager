@@ -294,43 +294,52 @@
 
 
 
-
 import React, { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://kartavya-job-application-manager.onrender.com';
 
-const STATUS_CFG = [
-  { value:'Applied',   color:'var(--sky)',    bg:'var(--sky-light)'    },
-  { value:'Interview', color:'var(--banana)', bg:'var(--banana-light)' },
-  { value:'Offer',     color:'#7CB518',       bg:'rgba(124,181,24,0.12)' },
-  { value:'Rejected',  color:'var(--terra)',  bg:'var(--terra-light)'  },
-];
+// Status list — no color/bg needed here, active state is always #7CB518 from CSS
+const STATUSES = ['Applied', 'Interview', 'Offer', 'Rejected'];
 
 export default function JobApplicationForm({ token, selectedApplication, onCancel, onSaved }) {
-  const blank = { id:uuidv4(), companyName:'', jobTitle:'', applicationDate:new Date().toISOString().split('T')[0], status:'Applied', jobLink:'', notes:'' };
+  const blank = {
+    id: uuidv4(),
+    companyName: '',
+    jobTitle: '',
+    applicationDate: new Date().toISOString().split('T')[0],
+    status: 'Applied',
+    jobLink: '',
+    notes: '',
+  };
   const [form, setForm] = useState(blank);
   const [err,  setErr]  = useState('');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setForm(selectedApplication
-      ? { ...selectedApplication, applicationDate: selectedApplication.applicationDate?.split('T')[0]||'' }
-      : { ...blank, id:uuidv4() }
+      ? { ...selectedApplication, applicationDate: selectedApplication.applicationDate?.split('T')[0] || '' }
+      : { ...blank, id: uuidv4() }
     );
   }, [selectedApplication]);
 
-  const set = (k,v) => { setForm(f=>({...f,[k]:v})); setErr(''); };
+  const set = (k, v) => { setForm(f => ({...f, [k]: v})); setErr(''); };
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!form.companyName||!form.jobTitle||!form.applicationDate) { setErr('Fill required fields'); return; }
+    if (!form.companyName || !form.jobTitle || !form.applicationDate) {
+      setErr('Fill required fields'); return;
+    }
     setBusy(true);
     try {
       const isEdit = !!selectedApplication;
       const res = await fetch(
-        `${API}/api/job-applications${isEdit?'/'+form.id:''}`,
-        { method:isEdit?'PUT':'POST', headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`}, body:JSON.stringify(form) }
+        `${API}/api/job-applications${isEdit ? '/'+form.id : ''}`,
+        {
+          method: isEdit ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(form),
+        }
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
@@ -345,7 +354,7 @@ export default function JobApplicationForm({ token, selectedApplication, onCance
         <h2>{selectedApplication ? '✏️ Edit Application' : '✨ Add Application'}</h2>
         <button className="icon-btn" onClick={onCancel} type="button">✕</button>
       </div>
-      {err && <div className="msg error form-err">{err}</div>}
+      {err && <div className="msg error" style={{margin:'0 20px 12px'}}>{err}</div>}
       <form onSubmit={submit} className="app-form">
         <div className="form-row">
           <div className="ff">
@@ -365,12 +374,14 @@ export default function JobApplicationForm({ token, selectedApplication, onCance
           <div className="ff">
             <label>Status <req>*</req></label>
             <div className="status-pick">
-              {STATUS_CFG.map(s=>(
-                <button key={s.value} type="button"
-                  className={`sp-btn ${form.status===s.value?'active':''}`}
-                  style={form.status===s.value?{'--sc':s.color,'--sb':s.bg}:{}}
-                  onClick={()=>set('status',s.value)}>
-                  {s.value}
+              {STATUSES.map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  className={`sp-btn ${form.status === s ? 'active' : ''}`}
+                  onClick={() => set('status', s)}
+                >
+                  {s}
                 </button>
               ))}
             </div>
@@ -386,7 +397,7 @@ export default function JobApplicationForm({ token, selectedApplication, onCance
         </div>
         <div className="form-btns">
           <button type="submit" className="btn-primary" disabled={busy}>
-            {busy ? <span className="spinner white" /> : (selectedApplication?'Update Application':'Add Application')}
+            {busy ? <span className="spinner white" /> : (selectedApplication ? 'Update Application' : 'Add Application')}
           </button>
           <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>
         </div>
