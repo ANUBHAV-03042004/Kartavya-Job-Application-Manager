@@ -138,7 +138,6 @@
 
 
 
-
 import React, { useState, useEffect } from 'react';
 import AuthPage  from './auth/AuthPage';
 import Dashboard from './components/Dashboard';
@@ -147,8 +146,37 @@ import './styles.css';
 export default function App() {
   const [user,  setUser]  = useState(null);
   const [token, setToken] = useState(null);
+  const [oauthError, setOauthError] = useState('');
 
   useEffect(() => {
+    // ── Handle OAuth redirect: ?token=...&user=...&error=... ──────
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    const urlUser  = params.get('user');
+    const urlError = params.get('error');
+
+    if (urlError) {
+      setOauthError(
+        urlError === 'google_failed' ? 'Google sign-in failed. Please try again.' :
+        urlError === 'github_failed' ? 'GitHub sign-in failed. Please try again.' :
+        'Sign-in failed. Please try again.'
+      );
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlToken && urlUser) {
+      try {
+        const parsedUser = JSON.parse(decodeURIComponent(urlUser));
+        setToken(urlToken);
+        setUser(parsedUser);
+        localStorage.setItem('kv_token', urlToken);
+        localStorage.setItem('kv_user', JSON.stringify(parsedUser));
+      } catch {}
+      // Clean URL so token isn't sitting in the address bar
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
+    // ── Normal session restore from localStorage ──────────────────
     try {
       const t = localStorage.getItem('kv_token');
       const u = localStorage.getItem('kv_user');
@@ -174,7 +202,7 @@ export default function App() {
   };
 
   if (!user || !token)
-    return <AuthPage onAuthSuccess={handleAuth} />;
+    return <AuthPage onAuthSuccess={handleAuth} oauthError={oauthError} />;
 
   return <Dashboard user={user} token={token} onLogout={handleLogout} onUserUpdate={updateUser} />;
 }
