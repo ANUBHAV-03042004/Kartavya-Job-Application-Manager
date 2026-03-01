@@ -283,8 +283,8 @@ const SECURITY_QUESTIONS = [
 // Per-section header colours — darkest shades from brand palette
 const HEAD = {
   profile:  { bg: '#5BC0EB', text: '#fff' },   // Sky blue
-  password: { bg: '#5C8001', text: '#fff' },   // Forest green (darkest)
-  security: { bg: '#4a6601', text: '#fff' },   // Darker forest
+  password: { bg: '#FBB02D', sub: 'rgba(255,255,255,0.75)' },  // lime green
+  security: { bg: '#7CB518', sub: 'rgba(255,255,255,0.75)' }, 
   danger:   { bg: '#d94f00', text: '#fff' },   // Flame dark
 };
 
