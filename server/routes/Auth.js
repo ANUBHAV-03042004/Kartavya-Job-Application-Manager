@@ -56,7 +56,7 @@ const router         = express.Router();
 const bcrypt         = require('bcryptjs');
 const jwt            = require('jsonwebtoken');
 const crypto         = require('crypto');
-const passport       = require('../config/passport');
+const passport       = require('../config/Passport');
 const User           = require('../models/User');
 const authMiddleware = require('../middleware/Auth');
 
