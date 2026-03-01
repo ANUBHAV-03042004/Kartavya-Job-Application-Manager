@@ -137,9 +137,11 @@
 // export default App;
 
 
+
+
 import React, { useState, useEffect } from 'react';
-import AuthPage   from './auth/AuthPage';
-import Dashboard  from './components/Dashboard';
+import AuthPage  from './auth/AuthPage';
+import Dashboard from './components/Dashboard';
 import './styles.css';
 
 export default function App() {
@@ -148,40 +150,31 @@ export default function App() {
 
   useEffect(() => {
     try {
-      const t = localStorage.getItem('jt_token');
-      const u = localStorage.getItem('jt_user');
+      const t = localStorage.getItem('kv_token');
+      const u = localStorage.getItem('kv_user');
       if (t && u) { setToken(t); setUser(JSON.parse(u)); }
     } catch {}
   }, []);
 
   const handleAuth = ({ token, user }) => {
-    setToken(token);
-    setUser(user);
-    localStorage.setItem('jt_token', token);
-    localStorage.setItem('jt_user', JSON.stringify(user));
+    setToken(token); setUser(user);
+    localStorage.setItem('kv_token', token);
+    localStorage.setItem('kv_user', JSON.stringify(user));
   };
 
   const handleLogout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('jt_token');
-    localStorage.removeItem('jt_user');
+    setToken(null); setUser(null);
+    localStorage.removeItem('kv_token');
+    localStorage.removeItem('kv_user');
   };
 
-  const updateUser = (updated) => {
-    setUser(updated);
-    localStorage.setItem('jt_user', JSON.stringify(updated));
+  const updateUser = (u) => {
+    setUser(u);
+    localStorage.setItem('kv_user', JSON.stringify(u));
   };
 
   if (!user || !token)
     return <AuthPage onAuthSuccess={handleAuth} />;
 
-  return (
-    <Dashboard
-      user={user}
-      token={token}
-      onLogout={handleLogout}
-      onUserUpdate={updateUser}
-    />
-  );
+  return <Dashboard user={user} token={token} onLogout={handleLogout} onUserUpdate={updateUser} />;
 }

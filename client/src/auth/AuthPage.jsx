@@ -173,186 +173,151 @@
 // export default AuthPage;
 
 
+
+
+
 import React, { useState } from 'react';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://kartavya-job-application-manager.onrender.com';
 
 export default function AuthPage({ onAuthSuccess }) {
-  const [view,    setView]    = useState('login'); // login | signup | forgot | reset
+  const [view,    setView]    = useState('login');
   const [form,    setForm]    = useState({ name:'', email:'', password:'', confirm:'', token:'', newPassword:'' });
   const [error,   setError]   = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const set = (k, v) => {
-    setForm(f => ({ ...f, [k]: v }));
-    setError('');
-    setSuccess('');
-  };
+  const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setError(''); setSuccess(''); };
+  const go  = (v)    => { setView(v); setError(''); setSuccess(''); };
 
   const submit = async (e) => {
     e.preventDefault();
     setError(''); setSuccess(''); setLoading(true);
     try {
       let endpoint, body;
-      if (view === 'login') {
-        endpoint = '/api/auth/login';
-        body = { email: form.email, password: form.password };
-      } else if (view === 'signup') {
+      if      (view === 'login')  { endpoint = '/api/auth/login';          body = { email: form.email, password: form.password }; }
+      else if (view === 'signup') {
         if (form.password !== form.confirm) { setError("Passwords don't match"); setLoading(false); return; }
         endpoint = '/api/auth/signup';
         body = { name: form.name, email: form.email, password: form.password };
-      } else if (view === 'forgot') {
-        endpoint = '/api/auth/forgot-password';
-        body = { email: form.email };
-      } else if (view === 'reset') {
-        endpoint = '/api/auth/reset-password';
-        body = { token: form.token, newPassword: form.newPassword };
       }
+      else if (view === 'forgot') { endpoint = '/api/auth/forgot-password'; body = { email: form.email }; }
+      else if (view === 'reset')  { endpoint = '/api/auth/reset-password';  body = { token: form.token, newPassword: form.newPassword }; }
 
-      const res  = await fetch(`${API}${endpoint}`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body),
-      });
+      const res  = await fetch(`${API}${endpoint}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Something went wrong');
+      if (!res.ok) throw new Error(data.message);
 
-      if (view === 'login' || view === 'signup') {
-        onAuthSuccess(data);
-      } else if (view === 'forgot') {
-        setSuccess(data.resetToken
-          ? `Dev mode — Reset token: ${data.resetToken}`
-          : 'If that email exists, a reset token was sent.');
-      } else if (view === 'reset') {
-        setSuccess('Password reset! Redirecting to sign in…');
-        setTimeout(() => { setView('login'); setForm(f => ({ ...f, token:'', newPassword:'' })); }, 2000);
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+      if (view === 'login' || view === 'signup') { onAuthSuccess(data); }
+      else if (view === 'forgot') { setSuccess(data.resetToken ? `Dev token: ${data.resetToken}` : 'Token sent!'); }
+      else if (view === 'reset')  { setSuccess('Password reset! Redirecting…'); setTimeout(() => go('login'), 2000); }
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
   };
-
-  const switchView = (v) => { setView(v); setError(''); setSuccess(''); };
 
   return (
     <div className="auth-root">
-      <div className="auth-bg-grid" />
-      <div className="auth-blobs">
-        <div className="blob b1" />
-        <div className="blob b2" />
-        <div className="blob b3" />
-      </div>
+      {/* Decorative shapes */}
+      <div className="auth-shape s1" />
+      <div className="auth-shape s2" />
+      <div className="auth-shape s3" />
 
-      <div className="auth-wrap">
-        {/* Brand */}
-        <div className="auth-brand">
-          <div className="brand-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
+      <div className="auth-layout">
+        {/* Left panel */}
+        <div className="auth-panel-left">
+          <img src="/kartavya_logo.png" alt="Kartavya Logo" className="auth-logo-img" />
+          <h1 className="auth-app-name">KARTAVYA</h1>
+          <p className="auth-app-sub">Job Application Manager</p>
+          <div className="auth-features">
+            {['Track every application in one place','Get insights with analytics dashboard','Never miss a follow-up again'].map(f => (
+              <div key={f} className="auth-feature">
+                <span className="auth-feature-dot" />
+                <span>{f}</span>
+              </div>
+            ))}
           </div>
-          <span>JobTrackr</span>
         </div>
 
+        {/* Right card */}
         <div className="auth-card">
-          <div className="auth-card-top">
-            <h1>
-              {view === 'login'  ? 'Welcome back'      :
-               view === 'signup' ? 'Create account'    :
-               view === 'forgot' ? 'Forgot password'   :
+          <div className="auth-card-inner">
+            <div className="auth-card-head">
+              <h2>
+                {view==='login'  ? 'Sign in'          :
+                 view==='signup' ? 'Create account'   :
+                 view==='forgot' ? 'Forgot password'  :
                                    'Reset password'}
-            </h1>
-            <p>
-              {view === 'login'  ? 'Sign in to your account'       :
-               view === 'signup' ? 'Start tracking your career'    :
-               view === 'forgot' ? "We'll help you reset it"       :
+              </h2>
+              <p>
+                {view==='login'  ? 'Welcome back! Sign in to continue'     :
+                 view==='signup' ? 'Start tracking your job applications'  :
+                 view==='forgot' ? "Enter your email to get a reset token" :
                                    'Enter your token and new password'}
-            </p>
-          </div>
-
-          {/* Login / Signup tabs */}
-          {(view === 'login' || view === 'signup') && (
-            <div className="auth-tabs">
-              <button className={`at ${view === 'login'  ? 'active' : ''}`} onClick={() => switchView('login')}>Sign In</button>
-              <button className={`at ${view === 'signup' ? 'active' : ''}`} onClick={() => switchView('signup')}>Sign Up</button>
+              </p>
             </div>
-          )}
 
-          {error   && <div className="msg error"   style={{ margin: '0 24px 12px' }}>{error}</div>}
-          {success && <div className="msg success" style={{ margin: '0 24px 12px' }}>{success}</div>}
+            {(view==='login'||view==='signup') && (
+              <div className="auth-tabs">
+                <button className={`auth-tab ${view==='login'  ?'active':''}`} onClick={()=>go('login')}>Sign In</button>
+                <button className={`auth-tab ${view==='signup' ?'active':''}`} onClick={()=>go('signup')}>Sign Up</button>
+              </div>
+            )}
 
-          <form onSubmit={submit} className="auth-form" autoComplete="off">
-            {view === 'signup' && (
-              <div className="af">
-                <label>Full Name</label>
-                <input type="text" value={form.name} onChange={e => set('name', e.target.value)}
-                  placeholder="Alex Johnson" required autoComplete="name" />
-              </div>
-            )}
-            {(view === 'login' || view === 'signup' || view === 'forgot') && (
-              <div className="af">
-                <label>Email</label>
-                <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
-                  placeholder="you@example.com" required autoComplete="email" />
-              </div>
-            )}
-            {(view === 'login' || view === 'signup') && (
-              <div className="af">
-                <label>Password</label>
-                <input type="password" value={form.password} onChange={e => set('password', e.target.value)}
-                  placeholder="••••••••" required minLength={6}
-                  autoComplete={view === 'login' ? 'current-password' : 'new-password'} />
-              </div>
-            )}
-            {view === 'signup' && (
-              <div className="af">
-                <label>Confirm Password</label>
-                <input type="password" value={form.confirm} onChange={e => set('confirm', e.target.value)}
-                  placeholder="••••••••" required minLength={6} autoComplete="new-password" />
-              </div>
-            )}
-            {view === 'reset' && (
-              <>
-                <div className="af">
+            {error   && <div className="msg error">{error}</div>}
+            {success && <div className="msg success">{success}</div>}
+
+            <form onSubmit={submit} className="auth-form">
+              {view==='signup' && (
+                <div className="afield">
+                  <label>Full Name</label>
+                  <input type="text" value={form.name} onChange={e=>set('name',e.target.value)} placeholder="Alex Johnson" required autoComplete="name" />
+                </div>
+              )}
+              {(view==='login'||view==='signup'||view==='forgot') && (
+                <div className="afield">
+                  <label>Email Address</label>
+                  <input type="email" value={form.email} onChange={e=>set('email',e.target.value)} placeholder="you@example.com" required autoComplete="email" />
+                </div>
+              )}
+              {(view==='login'||view==='signup') && (
+                <div className="afield">
+                  <label>Password</label>
+                  <input type="password" value={form.password} onChange={e=>set('password',e.target.value)} placeholder="••••••••" required minLength={6} autoComplete={view==='login'?'current-password':'new-password'} />
+                </div>
+              )}
+              {view==='signup' && (
+                <div className="afield">
+                  <label>Confirm Password</label>
+                  <input type="password" value={form.confirm} onChange={e=>set('confirm',e.target.value)} placeholder="••••••••" required minLength={6} autoComplete="new-password" />
+                </div>
+              )}
+              {view==='reset' && (<>
+                <div className="afield">
                   <label>Reset Token</label>
-                  <input type="text" value={form.token} onChange={e => set('token', e.target.value)}
-                    placeholder="Paste your reset token" required />
+                  <input type="text" value={form.token} onChange={e=>set('token',e.target.value)} placeholder="Paste your reset token" required />
                 </div>
-                <div className="af">
+                <div className="afield">
                   <label>New Password</label>
-                  <input type="password" value={form.newPassword} onChange={e => set('newPassword', e.target.value)}
-                    placeholder="Min 6 characters" required minLength={6} />
+                  <input type="password" value={form.newPassword} onChange={e=>set('newPassword',e.target.value)} placeholder="Min 6 characters" required minLength={6} />
                 </div>
-              </>
-            )}
+              </>)}
 
-            {view === 'login' && (
-              <button type="button" className="forgot-link" onClick={() => switchView('forgot')}>
-                Forgot password?
+              {view==='login' && (
+                <button type="button" className="link-btn" onClick={()=>go('forgot')}>Forgot password?</button>
+              )}
+
+              <button type="submit" className="auth-submit" disabled={loading}>
+                {loading ? <span className="spinner white" /> :
+                  view==='login'  ? 'Sign In →' :
+                  view==='signup' ? 'Create Account →' :
+                  view==='forgot' ? 'Send Reset Token →' : 'Reset Password →'}
               </button>
+            </form>
+
+            {(view==='forgot'||view==='reset') && (
+              <button className="back-btn" onClick={()=>go('login')}>← Back to Sign In</button>
             )}
-
-            <button type="submit" className="auth-submit" disabled={loading}>
-              {loading
-                ? <span className="spinner" />
-                : view === 'login'  ? 'Sign In →'
-                : view === 'signup' ? 'Create Account →'
-                : view === 'forgot' ? 'Send Reset Token →'
-                :                    'Reset Password →'}
-            </button>
-          </form>
-
-          {(view === 'forgot' || view === 'reset') && (
-            <button className="back-link" onClick={() => switchView('login')}>← Back to Sign In</button>
-          )}
-          {view === 'reset' && (
-            <button className="back-link" style={{ marginTop: 4 }} onClick={() => switchView('forgot')}>
-              Need a new token?
-            </button>
-          )}
+          </div>
         </div>
       </div>
     </div>

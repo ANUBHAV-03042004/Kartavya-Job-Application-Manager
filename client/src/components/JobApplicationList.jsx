@@ -246,80 +246,45 @@
 
 
 
-
 import React, { useState } from 'react';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://kartavya-job-application-manager.onrender.com';
 
-const STATUS = {
-  Applied:   { color: '#00bbf9', bg: 'rgba(0,187,249,0.12)',   emoji: '📤' },
-  Interview: { color: '#fee440', bg: 'rgba(254,228,64,0.12)',  emoji: '🎯' },
-  Offer:     { color: '#00f5d4', bg: 'rgba(0,245,212,0.12)',   emoji: '🎉' },
-  Rejected:  { color: '#f15bb5', bg: 'rgba(241,91,181,0.12)', emoji: '✖'  },
+const S = {
+  Applied:   { color:'var(--sky)',    bg:'var(--sky-light)',    emoji:'📤' },
+  Interview: { color:'var(--banana)', bg:'var(--banana-light)', emoji:'🎯' },
+  Offer:     { color:'var(--green)',  bg:'var(--green-light)',  emoji:'🎉' },
+  Rejected:  { color:'var(--terra)',  bg:'var(--terra-light)',  emoji:'✖'  },
 };
 
-function AppCard({ app, onEdit, onDelete }) {
-  const [expanded, setExpanded] = useState(false);
-  const conf = STATUS[app.status] || STATUS.Applied;
-
+function Card({ app, onEdit, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const c = S[app.status] || S.Applied;
   return (
-    <div className={`app-card ${expanded ? 'expanded' : ''}`} onClick={() => setExpanded(e => !e)}>
+    <div className={`app-card ${open?'expanded':''}`} onClick={()=>setOpen(o=>!o)}>
       <div className="ac-top">
         <div className="ac-left">
-          <div className="ac-logo" style={{ color: conf.color }}>
-            {app.companyName[0].toUpperCase()}
-          </div>
+          <div className="ac-logo" style={{background:c.bg, color:c.color}}>{app.companyName[0].toUpperCase()}</div>
           <div>
             <div className="ac-company">{app.companyName}</div>
-            <div className="ac-title">{app.jobTitle}</div>
+            <div className="ac-role">{app.jobTitle}</div>
           </div>
         </div>
-        <span className="ac-status" style={{ color: conf.color, background: conf.bg }}>
-          {conf.emoji} {app.status}
-        </span>
+        <span className="ac-badge" style={{color:c.color, background:c.bg}}>{c.emoji} {app.status}</span>
       </div>
 
       <div className="ac-meta">
-        <span>
-          📅 {new Date(app.applicationDate).toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric', year: 'numeric',
-          })}
-        </span>
-        {app.jobLink && (
-          <a
-            href={app.jobLink} target="_blank" rel="noopener noreferrer"
-            className="ac-link"
-            onClick={e => e.stopPropagation()}
-          >
-            ↗ View Job
-          </a>
-        )}
+        <span>📅 {new Date(app.applicationDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
+        {app.jobLink && <a href={app.jobLink} target="_blank" rel="noopener noreferrer" className="ac-link" onClick={e=>e.stopPropagation()}>↗ View</a>}
       </div>
 
-      {expanded && app.notes && (
-        <div className="ac-notes">{app.notes}</div>
-      )}
+      {open && app.notes && <div className="ac-notes">{app.notes}</div>}
 
-      <div className="ac-actions" onClick={e => e.stopPropagation()}>
-        <button className="ab edit" onClick={() => onEdit(app)}>
-          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4z"/>
-          </svg>
-          Edit
-        </button>
-        <button
-          className="ab delete"
-          onClick={() => { if (window.confirm('Delete this application?')) onDelete(app.id); }}
-        >
-          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <polyline points="3 6 5 6 21 6"/>
-            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
-          </svg>
-          Delete
-        </button>
+      <div className="ac-actions" onClick={e=>e.stopPropagation()}>
+        <button className="ac-btn edit" onClick={()=>onEdit(app)}>Edit</button>
+        <button className="ac-btn del"  onClick={()=>{ if(window.confirm('Delete this application?')) onDelete(app.id); }}>Delete</button>
       </div>
-      <div className="ac-hint">{expanded ? '▲' : '▼'}</div>
+      <div className="ac-hint">{open?'▲':'▼'}</div>
     </div>
   );
 }
@@ -328,88 +293,50 @@ export default function JobApplicationList({ apps, loading, token, onEdit, onRef
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
 
-  const handleDelete = async (id) => {
+  const del = async (id) => {
     try {
       const res = await fetch(`${API}/api/job-applications/${id}`, {
-        method:  'DELETE',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        method:'DELETE', headers:{Authorization:`Bearer ${token}`}
       });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.message); }
+      if (!res.ok) { const d=await res.json(); throw new Error(d.message); }
       onRefresh();
-    } catch (e) {
-      onError(e.message);
-    }
+    } catch(e) { onError(e.message); }
   };
 
-  const filtered = apps.filter(a => {
-    const mf = filter === 'All' || a.status === filter;
-    const ms = !search ||
-      a.companyName.toLowerCase().includes(search.toLowerCase()) ||
-      a.jobTitle.toLowerCase().includes(search.toLowerCase());
+  const shown = apps.filter(a => {
+    const mf = filter==='All' || a.status===filter;
+    const ms = !search || a.companyName.toLowerCase().includes(search.toLowerCase()) || a.jobTitle.toLowerCase().includes(search.toLowerCase());
     return mf && ms;
   });
 
-  const filters = ['All', 'Applied', 'Interview', 'Offer', 'Rejected'];
+  const filters = ['All','Applied','Interview','Offer','Rejected'];
 
-  if (loading) {
-    return (
-      <div className="grid">
-        <div className="skel" /><div className="skel" /><div className="skel" />
-      </div>
-    );
-  }
+  if (loading) return <div className="grid">{[1,2,3].map(i=><div key={i} className="skel" />)}</div>;
 
   return (
     <div>
-      {/* Toolbar */}
       <div className="toolbar">
         <div className="search-box">
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-            value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search company or title…"
-          />
-          {search && <button className="sc" onClick={() => setSearch('')}>✕</button>}
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search company or role…" />
+          {search && <button className="sc" onClick={()=>setSearch('')}>✕</button>}
         </div>
-
         <div className="filter-row">
-          {filters.map(f => (
-            <button
-              key={f}
-              className={`fp ${filter === f ? 'active' : ''}`}
-              style={filter === f && f !== 'All' ? { '--fc': STATUS[f]?.color, '--fb': STATUS[f]?.bg } : {}}
-              onClick={() => setFilter(f)}
-            >
-              {f !== 'All' && <span className="fd" style={{ background: STATUS[f]?.color }} />}
-              {f}
-              <span className="fc">
-                {f === 'All' ? apps.length : apps.filter(a => a.status === f).length}
-              </span>
+          {filters.map(f=>(
+            <button key={f} className={`fp ${filter===f?'active':''}`}
+              style={filter===f&&f!=='All'?{'--fc':S[f]?.color,'--fb':S[f]?.bg}:{}}
+              onClick={()=>setFilter(f)}>
+              {f!=='All' && <span className="fd" style={{background:S[f]?.color}} />}
+              {f}<span className="fc">{f==='All'?apps.length:apps.filter(a=>a.status===f).length}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Grid */}
-      {filtered.length === 0 ? (
-        <div className="empty">
-          <div style={{ fontSize: 48 }}>🎯</div>
-          <p>{apps.length === 0 ? 'No applications yet. Add your first one!' : 'No results match your filters.'}</p>
-        </div>
-      ) : (
-        <div className="grid">
-          {filtered.map(app => (
-            <AppCard
-              key={app.id}
-              app={app}
-              onEdit={onEdit}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
-      )}
+      {shown.length === 0
+        ? <div className="empty"><div style={{fontSize:48}}>🎯</div><p>{apps.length===0?'No applications yet. Add your first one!':'No results match your filters.'}</p></div>
+        : <div className="grid">{shown.map(app=><Card key={app.id} app={app} onEdit={onEdit} onDelete={del} />)}</div>
+      }
     </div>
   );
 }

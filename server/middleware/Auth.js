@@ -8,7 +8,7 @@ module.exports = (req, res, next) => {
   try {
     const decoded = jwt.verify(
       authHeader.split(' ')[1],
-      process.env.JWT_SECRET || 'dev_secret_change_me'
+      process.env.JWT_SECRET || 'kartavya_secret_change_me'
     );
     req.userId = decoded.userId;
     next();
