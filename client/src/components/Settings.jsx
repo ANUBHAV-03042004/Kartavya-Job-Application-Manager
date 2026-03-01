@@ -86,9 +86,9 @@ export default function Settings({ user, token, onLogout }) {
           <div className="s-head"><h3>Profile</h3><p>Your account info</p></div>
           <div className="s-body">
             <div className="profile-row">
-              <div className="profile-av">{user.name[0].toUpperCase()}</div>
+              <div className="profile-av">{(user.name || user.email || 'U')[0].toUpperCase()}</div>
               <div>
-                <div className="pname">{user.name}</div>
+                <div className="pname">{user.name || user.email}</div>
                 <div className="pemail">{user.email}</div>
                 <div className="pmember">Member since {new Date(user.createdAt||Date.now()).toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div>
               </div>
