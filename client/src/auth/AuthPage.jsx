@@ -23,18 +23,20 @@ export default function AuthPage({ onAuthSuccess }) {
   const [error,      setError]      = useState('');
   const [success,    setSuccess]    = useState('');
   const [loading,    setLoading]    = useState(false);
-  const [forgotStep, setForgotStep] = useState(1); // 1=email, 2=security Q, 3=new password
+  const [forgotStep, setForgotStep] = useState(1);
   const [forgotCtx,  setForgotCtx]  = useState({ email:'', question:'', token:'' });
+  const [oauthMsg,   setOauthMsg]   = useState('');
 
   const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setError(''); setSuccess(''); };
-  const go  = (v)    => { setView(v); setError(''); setSuccess(''); setForgotStep(1); };
+  const go  = (v)    => { setView(v); setError(''); setSuccess(''); setForgotStep(1); setOauthMsg(''); };
 
-  // ── OAuth ─────────────────────────────────────────────────────────
+  // ── OAuth — shows friendly message since backend not configured yet ──
   const oauthLogin = (provider) => {
-    window.location.href = `${API}/api/auth/${provider}`;
+    // Once you add passport-google-oauth20 / passport-github2 to backend,
+    // uncomment: window.location.href = `${API}/api/auth/${provider}`;
+    setOauthMsg(`${provider === 'google' ? 'Google' : 'GitHub'} sign-in requires backend OAuth setup. See the backend guide below, or sign in with email for now.`);
   };
 
-  // ── Handlers ──────────────────────────────────────────────────────
   const handleLogin = async () => {
     const res  = await fetch(`${API}/api/auth/login`, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -61,7 +63,6 @@ export default function AuthPage({ onAuthSuccess }) {
     onAuthSuccess(data);
   };
 
-  // Forgot: Step 1 — look up security question by email
   const handleForgotStep1 = async () => {
     const res  = await fetch(`${API}/api/auth/security-question`, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -73,7 +74,6 @@ export default function AuthPage({ onAuthSuccess }) {
     setForgotStep(2);
   };
 
-  // Forgot: Step 2 — verify answer, get reset token
   const handleForgotStep2 = async () => {
     const res  = await fetch(`${API}/api/auth/verify-security-answer`, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -85,7 +85,6 @@ export default function AuthPage({ onAuthSuccess }) {
     setForgotStep(3);
   };
 
-  // Forgot: Step 3 — reset with token
   const handleForgotStep3 = async () => {
     if (form.newPassword.length < 6) throw new Error('Password must be at least 6 characters');
     const res  = await fetch(`${API}/api/auth/reset-password`, {
@@ -94,7 +93,7 @@ export default function AuthPage({ onAuthSuccess }) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message);
-    setSuccess('Password reset! Redirecting to sign in…');
+    setSuccess('Password reset! Redirecting…');
     setTimeout(() => go('login'), 2000);
   };
 
@@ -115,200 +114,272 @@ export default function AuthPage({ onAuthSuccess }) {
 
   return (
     <div className="auth-root">
-      <div className="auth-shape s1" />
-      <div className="auth-shape s2" />
-      <div className="auth-shape s3" />
+      {/* animated background blobs */}
+      <div className="auth-blob b1" />
+      <div className="auth-blob b2" />
+      <div className="auth-blob b3" />
 
-      <div className="auth-layout">
-        {/* ── Left Panel ── */}
+      <div className={`auth-layout ${view === 'signup' ? 'wide' : ''}`}>
+
+        {/* ══ LEFT PANEL ══ */}
         <div className="auth-panel-left">
-          <img src="/kartavya_logo.png" alt="Kartavya Logo" className="auth-logo-img" />
-          <h1 className="auth-app-name">KARTAVYA</h1>
-          <p className="auth-app-sub">Job Application Manager</p>
-          <div className="auth-features">
+          <div className="apl-top">
+            <img src="/kartavya_logo.png" alt="Kartavya" className="apl-logo" />
+            <div className="apl-brand">KARTAVYA</div>
+            <div className="apl-tagline">Job Application Manager</div>
+          </div>
+
+          <div className="apl-features">
             {[
-              'Track every application in one place',
-              'Get insights with analytics dashboard',
-              'Never miss a follow-up again',
+              { icon:'📋', text:'Track every application' },
+              { icon:'📊', text:'Analytics & insights' },
+              { icon:'🔔', text:'Never miss a follow-up' },
+              { icon:'🔐', text:'Secure & private' },
             ].map(f => (
-              <div key={f} className="auth-feature">
-                <span className="auth-feature-dot" />
-                <span>{f}</span>
+              <div key={f.text} className="apl-feat">
+                <span className="apl-feat-icon">{f.icon}</span>
+                <span>{f.text}</span>
               </div>
             ))}
           </div>
+
+          <div className="apl-bottom">
+            <div className="apl-stat"><span className="apl-stat-n">100%</span><span>Free</span></div>
+            <div className="apl-stat-div" />
+            <div className="apl-stat"><span className="apl-stat-n">∞</span><span>Applications</span></div>
+            <div className="apl-stat-div" />
+            <div className="apl-stat"><span className="apl-stat-n">5★</span><span>Tracking</span></div>
+          </div>
         </div>
 
-        {/* ── Right Card ── */}
-        <div className="auth-card">
-          <div className="auth-card-inner">
+        {/* ══ RIGHT PANEL ══ */}
+        <div className="auth-right">
 
-            {/* ════ LOGIN / SIGNUP ════ */}
-            {(view === 'login' || view === 'signup') && (
-              <>
-                <div className="auth-card-head">
-                  <h2>{view === 'login' ? 'Sign in' : 'Create account'}</h2>
-                  <p>{view === 'login' ? 'Welcome back! Sign in to continue' : 'Start tracking your job applications'}</p>
+          {/* ── LOGIN ── */}
+          {view === 'login' && (
+            <div className="auth-box">
+              <div className="auth-box-head">
+                <h2>Welcome back</h2>
+                <p>Sign in to your account</p>
+              </div>
+
+              <div className="atabs">
+                <button className="atab active">Sign In</button>
+                <button className="atab" onClick={()=>go('signup')}>Sign Up</button>
+              </div>
+
+              {/* OAuth */}
+              <div className="oauth-row">
+                <button type="button" className="oauth-btn google" onClick={()=>oauthLogin('google')}>
+                  <GoogleIcon /> Continue with Google
+                </button>
+                <button type="button" className="oauth-btn github" onClick={()=>oauthLogin('github')}>
+                  <GitHubIcon /> Continue with GitHub
+                </button>
+              </div>
+              {oauthMsg && <div className="msg warn" style={{marginBottom:4}}>{oauthMsg}</div>}
+              <div className="oauth-div"><span>or sign in with email</span></div>
+
+              {error   && <div className="msg error">{error}</div>}
+              {success && <div className="msg success">{success}</div>}
+
+              <form onSubmit={submit} className="aform">
+                <div className="afield">
+                  <label>Email Address</label>
+                  <input type="email" value={form.email} onChange={e=>set('email',e.target.value)}
+                    placeholder="you@example.com" required autoComplete="email" />
                 </div>
-
-                <div className="auth-tabs">
-                  <button className={`auth-tab ${view==='login'  ?'active':''}`} onClick={()=>go('login')}>Sign In</button>
-                  <button className={`auth-tab ${view==='signup' ?'active':''}`} onClick={()=>go('signup')}>Sign Up</button>
+                <div className="afield">
+                  <label>Password</label>
+                  <input type="password" value={form.password} onChange={e=>set('password',e.target.value)}
+                    placeholder="••••••••" required minLength={6} autoComplete="current-password" />
                 </div>
+                <button type="button" className="link-btn" onClick={()=>go('forgot')}>Forgot password?</button>
+                <button type="submit" className="auth-submit" disabled={loading}>
+                  {loading ? <span className="spinner white" /> : 'Sign In →'}
+                </button>
+              </form>
 
-                {/* OAuth */}
-                <div className="oauth-row">
-                  <button type="button" className="oauth-btn google" onClick={()=>oauthLogin('google')}>
-                    <GoogleIcon />
-                    Continue with Google
-                  </button>
-                  <button type="button" className="oauth-btn github" onClick={()=>oauthLogin('github')}>
-                    <GitHubIcon />
-                    Continue with GitHub
-                  </button>
-                </div>
-                <div className="oauth-divider"><span>or continue with email</span></div>
+              <div className="auth-switch">
+                Don't have an account? <button onClick={()=>go('signup')}>Sign up free</button>
+              </div>
+            </div>
+          )}
 
-                {error   && <div className="msg error"  style={{marginBottom:12}}>{error}</div>}
-                {success && <div className="msg success" style={{marginBottom:12}}>{success}</div>}
+          {/* ── SIGNUP ── TWO COLUMNS ── */}
+          {view === 'signup' && (
+            <div className="auth-box signup-box">
+              <div className="auth-box-head">
+                <h2>Create your account</h2>
+                <p>Start tracking your job applications today</p>
+              </div>
 
-                <form onSubmit={submit} className="auth-form">
-                  {view === 'signup' && (
+              <div className="atabs">
+                <button className="atab" onClick={()=>go('login')}>Sign In</button>
+                <button className="atab active">Sign Up</button>
+              </div>
+
+              {/* OAuth */}
+              <div className="oauth-row">
+                <button type="button" className="oauth-btn google" onClick={()=>oauthLogin('google')}>
+                  <GoogleIcon /> Continue with Google
+                </button>
+                <button type="button" className="oauth-btn github" onClick={()=>oauthLogin('github')}>
+                  <GitHubIcon /> Continue with GitHub
+                </button>
+              </div>
+              {oauthMsg && <div className="msg warn" style={{marginBottom:4}}>{oauthMsg}</div>}
+              <div className="oauth-div"><span>or create account with email</span></div>
+
+              {error   && <div className="msg error">{error}</div>}
+              {success && <div className="msg success">{success}</div>}
+
+              {/* Two-column split */}
+              <div className="signup-cols">
+                {/* Left col — account details */}
+                <div className="signup-col">
+                  <div className="signup-col-title">Account Details</div>
+                  <form id="signup-form" onSubmit={submit} className="aform">
                     <div className="afield">
                       <label>Full Name</label>
                       <input type="text" value={form.name} onChange={e=>set('name',e.target.value)}
                         placeholder="Alex Johnson" required autoComplete="name" />
                     </div>
-                  )}
-                  <div className="afield">
-                    <label>Email Address</label>
-                    <input type="email" value={form.email} onChange={e=>set('email',e.target.value)}
-                      placeholder="you@example.com" required autoComplete="email" />
-                  </div>
-                  <div className="afield">
-                    <label>Password</label>
-                    <input type="password" value={form.password} onChange={e=>set('password',e.target.value)}
-                      placeholder="••••••••" required minLength={6}
-                      autoComplete={view==='login'?'current-password':'new-password'} />
-                  </div>
-
-                  {view === 'signup' && (
-                    <>
-                      <div className="afield">
-                        <label>Confirm Password</label>
-                        <input type="password" value={form.confirm} onChange={e=>set('confirm',e.target.value)}
-                          placeholder="••••••••" required minLength={6} autoComplete="new-password" />
-                      </div>
-                      <div className="sq-section">
-                        <div className="sq-section-title">🔐 Account Recovery</div>
-                        <div className="sq-section-desc">This question will verify your identity if you forget your password — no email needed.</div>
-                        <div className="afield" style={{marginTop:10}}>
-                          <label>Security Question</label>
-                          <select value={form.securityQuestion} onChange={e=>set('securityQuestion',e.target.value)}>
-                            {SECURITY_QUESTIONS.map(q=><option key={q} value={q}>{q}</option>)}
-                          </select>
-                        </div>
-                        <div className="afield">
-                          <label>Your Answer</label>
-                          <input type="text" value={form.securityAnswer} onChange={e=>set('securityAnswer',e.target.value)}
-                            placeholder="Case-insensitive answer" required autoComplete="off" />
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {view === 'login' && (
-                    <button type="button" className="link-btn" onClick={()=>go('forgot')}>Forgot password?</button>
-                  )}
-
-                  <button type="submit" className="auth-submit" disabled={loading}>
-                    {loading ? <span className="spinner white" /> :
-                      view === 'login' ? 'Sign In →' : 'Create Account →'}
-                  </button>
-                </form>
-              </>
-            )}
-
-            {/* ════ FORGOT PASSWORD ════ */}
-            {view === 'forgot' && (
-              <>
-                <div className="auth-card-head">
-                  <h2>Recover Account</h2>
-                  <p>Answer your security question to reset your password</p>
-                </div>
-
-                {/* Step indicator */}
-                <div className="forgot-steps">
-                  {[
-                    { n:1, label:'Your Email' },
-                    { n:2, label:'Security Q' },
-                    { n:3, label:'New Password' },
-                  ].map(({ n, label }) => (
-                    <React.Fragment key={n}>
-                      <div className={`fstep ${forgotStep >= n ? 'active' : ''} ${forgotStep > n ? 'done' : ''}`}>
-                        <div className="fstep-dot">{forgotStep > n ? '✓' : n}</div>
-                        <div className="fstep-label">{label}</div>
-                      </div>
-                      {n < 3 && <div className={`fstep-line ${forgotStep > n ? 'done' : ''}`} />}
-                    </React.Fragment>
-                  ))}
-                </div>
-
-                {error   && <div className="msg error"  style={{marginBottom:12}}>{error}</div>}
-                {success && <div className="msg success" style={{marginBottom:12}}>{success}</div>}
-
-                <form onSubmit={submit} className="auth-form">
-                  {forgotStep === 1 && (
                     <div className="afield">
                       <label>Email Address</label>
-                      <input type="email" value={form.forgotEmail} onChange={e=>set('forgotEmail',e.target.value)}
-                        placeholder="The email you registered with" required autoComplete="email" />
+                      <input type="email" value={form.email} onChange={e=>set('email',e.target.value)}
+                        placeholder="you@example.com" required autoComplete="email" />
                     </div>
-                  )}
-
-                  {forgotStep === 2 && (
-                    <>
-                      <div className="sq-question-box">
-                        <div className="sq-q-label">Your Security Question:</div>
-                        <div className="sq-q-text">"{forgotCtx.question}"</div>
-                      </div>
-                      <div className="afield">
-                        <label>Your Answer</label>
-                        <input type="text" value={form.sqAnswer} onChange={e=>set('sqAnswer',e.target.value)}
-                          placeholder="Type your answer (case-insensitive)" required autoComplete="off" />
-                      </div>
-                    </>
-                  )}
-
-                  {forgotStep === 3 && (
                     <div className="afield">
-                      <div className="msg success" style={{marginBottom:12}}>✓ Identity verified! Set your new password.</div>
+                      <label>Password</label>
+                      <input type="password" value={form.password} onChange={e=>set('password',e.target.value)}
+                        placeholder="Min 6 characters" required minLength={6} autoComplete="new-password" />
+                    </div>
+                    <div className="afield">
+                      <label>Confirm Password</label>
+                      <input type="password" value={form.confirm} onChange={e=>set('confirm',e.target.value)}
+                        placeholder="Repeat password" required minLength={6} autoComplete="new-password" />
+                    </div>
+                  </form>
+                </div>
+
+                {/* Divider */}
+                <div className="signup-col-div">
+                  <div className="signup-col-div-line" />
+                  <div className="signup-col-div-badge">🔐</div>
+                  <div className="signup-col-div-line" />
+                </div>
+
+                {/* Right col — account recovery */}
+                <div className="signup-col">
+                  <div className="signup-col-title">Account Recovery</div>
+                  <div className="sq-info-box">
+                    No email needed to recover your account — just answer this question.
+                  </div>
+                  <div className="aform" style={{gap:14,display:'flex',flexDirection:'column'}}>
+                    <div className="afield">
+                      <label>Security Question</label>
+                      <select value={form.securityQuestion} onChange={e=>set('securityQuestion',e.target.value)}
+                        form="signup-form">
+                        {SECURITY_QUESTIONS.map(q=><option key={q} value={q}>{q}</option>)}
+                      </select>
+                    </div>
+                    <div className="afield">
+                      <label>Your Answer</label>
+                      <input type="text" value={form.securityAnswer} onChange={e=>set('securityAnswer',e.target.value)}
+                        placeholder="Case-insensitive" required autoComplete="off" form="signup-form" />
+                    </div>
+                    <div className="sq-tip">
+                      💡 Make sure you remember this answer — it's the only way to reset your password without email.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Full-width submit */}
+              <button type="submit" form="signup-form" className="auth-submit" disabled={loading}>
+                {loading ? <span className="spinner white" /> : 'Create Account →'}
+              </button>
+
+              <div className="auth-switch">
+                Already have an account? <button onClick={()=>go('login')}>Sign in</button>
+              </div>
+            </div>
+          )}
+
+          {/* ── FORGOT PASSWORD ── */}
+          {view === 'forgot' && (
+            <div className="auth-box">
+              <div className="auth-box-head">
+                <h2>Recover Account</h2>
+                <p>Answer your security question — no email needed</p>
+              </div>
+
+              {/* Step dots */}
+              <div className="forgot-steps">
+                {[{n:1,label:'Email'},{n:2,label:'Security Q'},{n:3,label:'New Password'}].map(({n,label}) => (
+                  <React.Fragment key={n}>
+                    <div className={`fstep ${forgotStep>=n?'act':''} ${forgotStep>n?'done':''}`}>
+                      <div className="fsdot">{forgotStep>n?'✓':n}</div>
+                      <div className="fslabel">{label}</div>
+                    </div>
+                    {n<3 && <div className={`fsline ${forgotStep>n?'done':''}`} />}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              {error   && <div className="msg error">{error}</div>}
+              {success && <div className="msg success">{success}</div>}
+
+              <form onSubmit={submit} className="aform">
+                {forgotStep===1 && (
+                  <div className="afield">
+                    <label>Email Address</label>
+                    <input type="email" value={form.forgotEmail} onChange={e=>set('forgotEmail',e.target.value)}
+                      placeholder="The email you registered with" required autoComplete="email" />
+                  </div>
+                )}
+                {forgotStep===2 && (
+                  <>
+                    <div className="sq-question-box">
+                      <div className="sq-q-label">Your Security Question</div>
+                      <div className="sq-q-text">"{forgotCtx.question}"</div>
+                    </div>
+                    <div className="afield">
+                      <label>Your Answer</label>
+                      <input type="text" value={form.sqAnswer} onChange={e=>set('sqAnswer',e.target.value)}
+                        placeholder="Type your answer (case-insensitive)" required autoComplete="off" />
+                    </div>
+                  </>
+                )}
+                {forgotStep===3 && (
+                  <>
+                    <div className="msg success">✓ Identity verified! Set your new password.</div>
+                    <div className="afield">
                       <label>New Password</label>
                       <input type="password" value={form.newPassword} onChange={e=>set('newPassword',e.target.value)}
                         placeholder="At least 6 characters" required minLength={6} autoComplete="new-password" />
                     </div>
-                  )}
+                  </>
+                )}
+                <button type="submit" className="auth-submit" disabled={loading}>
+                  {loading ? <span className="spinner white" /> :
+                    forgotStep===1 ? 'Find My Account →' :
+                    forgotStep===2 ? 'Verify Answer →' :
+                                     'Reset Password →'}
+                </button>
+              </form>
 
-                  <button type="submit" className="auth-submit" disabled={loading}>
-                    {loading ? <span className="spinner white" /> :
-                      forgotStep === 1 ? 'Find My Account →' :
-                      forgotStep === 2 ? 'Verify Answer →' :
-                                         'Reset Password →'}
-                  </button>
-                </form>
+              <button className="back-btn" onClick={()=>go('login')}>← Back to Sign In</button>
+            </div>
+          )}
 
-                <button className="back-btn" onClick={()=>go('login')}>← Back to Sign In</button>
-              </>
-            )}
-
-          </div>
-        </div>
+        </div>{/* auth-right */}
       </div>
     </div>
   );
 }
 
-// ── Icons ──────────────────────────────────────────────────────────
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" style={{flexShrink:0}}>
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
