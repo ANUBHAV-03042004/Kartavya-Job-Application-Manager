@@ -2,18 +2,34 @@ import React, { useState } from 'react';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://kartavya-job-application-manager.onrender.com';
 
+const SECURITY_QUESTIONS = [
+  "What was the name of your first pet?",
+  "What city were you born in?",
+  "What is your mother's maiden name?",
+  "What was the name of your first school?",
+  "What is your favourite movie?",
+  "What was the make of your first car?",
+  "What street did you grow up on?",
+  "What is the name of your childhood best friend?",
+];
+
 export default function Settings({ user, token, onLogout }) {
   const [pw,    setPw]    = useState({ current:'', next:'', confirm:'' });
   const [pwMsg, setPwMsg] = useState({ type:'', text:'' });
   const [pwBusy,setPwBusy]= useState(false);
 
-  const [delPw,      setDelPw]      = useState('');
-  const [delMsg,     setDelMsg]     = useState({ type:'', text:'' });
-  const [delBusy,    setDelBusy]    = useState(false);
-  const [showDel,    setShowDel]    = useState(false);
+  const [sq,    setSq]    = useState({ question: SECURITY_QUESTIONS[0], answer:'', password:'' });
+  const [sqMsg, setSqMsg] = useState({ type:'', text:'' });
+  const [sqBusy,setSqBusy]= useState(false);
+
+  const [delPw,   setDelPw]   = useState('');
+  const [delMsg,  setDelMsg]  = useState({ type:'', text:'' });
+  const [delBusy, setDelBusy] = useState(false);
+  const [showDel, setShowDel] = useState(false);
 
   const hdr = { 'Content-Type':'application/json', Authorization:`Bearer ${token}` };
 
+  // Change Password
   const changePw = async (e) => {
     e.preventDefault();
     if (pw.next !== pw.confirm) { setPwMsg({type:'error',text:"Passwords don't match"}); return; }
@@ -29,6 +45,26 @@ export default function Settings({ user, token, onLogout }) {
     finally { setPwBusy(false); }
   };
 
+  // Update Security Question
+  const updateSq = async (e) => {
+    e.preventDefault();
+    if (!sq.answer.trim()) { setSqMsg({type:'error',text:'Please provide an answer'}); return; }
+    if (!sq.password)      { setSqMsg({type:'error',text:'Enter your current password to confirm'}); return; }
+    setSqBusy(true); setSqMsg({type:'',text:''});
+    try {
+      const res  = await fetch(`${API}/api/auth/security-question`, {
+        method:'PATCH', headers:hdr,
+        body: JSON.stringify({ currentPassword: sq.password, securityQuestion: sq.question, securityAnswer: sq.answer.trim().toLowerCase() })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setSqMsg({type:'success',text:'Security question updated!'});
+      setSq(s=>({...s, answer:'', password:''}));
+    } catch(e) { setSqMsg({type:'error',text:e.message}); }
+    finally { setSqBusy(false); }
+  };
+
+  // Delete Account
   const deleteAcc = async () => {
     if (!delPw) { setDelMsg({type:'error',text:'Enter your password'}); return; }
     setDelBusy(true); setDelMsg({type:'',text:''});
@@ -74,6 +110,34 @@ export default function Settings({ user, token, onLogout }) {
                 <div className="ff"><label>Confirm New Password</label><input type="password" value={pw.confirm} onChange={e=>setPw(p=>({...p,confirm:e.target.value}))} placeholder="Repeat" required minLength={6} autoComplete="new-password" /></div>
               </div>
               <div><button type="submit" className="btn-primary" disabled={pwBusy}>{pwBusy?<span className="spinner white"/>:'Update Password'}</button></div>
+            </form>
+          </div>
+        </div>
+
+        {/* Security Question */}
+        <div className="s-section">
+          <div className="s-head">
+            <h3>🔐 Security Question</h3>
+            <p>Used to recover your account without email — keep this updated</p>
+          </div>
+          <div className="s-body">
+            {sqMsg.text && <div className={`msg ${sqMsg.type}`} style={{marginBottom:16}}>{sqMsg.text}</div>}
+            <form onSubmit={updateSq} className="s-form">
+              <div className="ff">
+                <label>Security Question</label>
+                <select value={sq.question} onChange={e=>setSq(s=>({...s,question:e.target.value}))}>
+                  {SECURITY_QUESTIONS.map(q=><option key={q} value={q}>{q}</option>)}
+                </select>
+              </div>
+              <div className="ff">
+                <label>New Answer</label>
+                <input type="text" value={sq.answer} onChange={e=>setSq(s=>({...s,answer:e.target.value}))} placeholder="Case-insensitive" required autoComplete="off" />
+              </div>
+              <div className="ff">
+                <label>Confirm with Current Password</label>
+                <input type="password" value={sq.password} onChange={e=>setSq(s=>({...s,password:e.target.value}))} placeholder="••••••••" required autoComplete="current-password" />
+              </div>
+              <div><button type="submit" className="btn-primary" disabled={sqBusy}>{sqBusy?<span className="spinner white"/>:'Update Security Question'}</button></div>
             </form>
           </div>
         </div>

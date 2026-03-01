@@ -158,6 +158,166 @@
 
 
 
+/* body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f9;
+    color: #333;
+  }
+      #action{ display:flex}
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  h1 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 20px;
+  }
+  
+  .form-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+  }
+  
+  .form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+  
+  .button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  
+  .button-primary {
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .button-primary:hover {
+    background-color: #0056b3;
+  }
+  
+  .button-secondary {
+    background-color: #6c757d;
+    color: white;
+  }
+  
+  .button-secondary:hover {
+    background-color: #5a6268;
+  }
+  
+  .button-danger {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .button-danger:hover {
+    background-color: #c82333;
+  }
+  
+  .table-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+  }
+  
+  tr:hover {
+    background-color: #f1f3f5;
+  }
+  
+  a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
+  .error {
+    color: #dc3545;
+    margin-bottom: 15px;
+    text-align: center;
+  }
+  
+  @media (max-width: 768px) {
+    .container {
+      padding: 10px;
+    }
+  
+    .form-container, .table-container {
+      padding: 15px;
+    }
+  
+    table {
+      font-size: 14px;
+    }
+  
+    th, td {
+      padding: 8px;
+    }
+  } */
+
+
+
+ 
+  
+
+
+
+
+
+
+
+
 
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800&display=swap');
 
@@ -281,18 +441,79 @@ html, body, #root {
 .auth-tab  { flex:1; padding: 9px; background: none; border: none; font-family:'Nunito',sans-serif; font-size: 14px; font-weight: 600; color: var(--t3); cursor: pointer; border-radius: 6px; transition: all 0.2s; }
 .auth-tab.active { background: var(--terra); color: white; }
 
+/* ── OAuth Buttons ── */
+.oauth-row    { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
+.oauth-btn    {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 11px 18px; border-radius: 8px;
+  font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; border: 1.5px solid;
+}
+.oauth-btn.google { background: white; border-color: #dadce0; color: #3c4043; }
+.oauth-btn.google:hover { background: #f8f9fa; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.oauth-btn.github { background: #24292e; border-color: #24292e; color: white; }
+.oauth-btn.github:hover { background: #1a1f24; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+
+.oauth-divider {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 12px; color: var(--t3); font-weight: 600;
+  margin: 6px 0;
+}
+.oauth-divider::before, .oauth-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border-md);
+}
+
+/* ── Security Question Section (signup) ── */
+.sq-section {
+  background: linear-gradient(135deg, #e8f7fd, #f1f8e5);
+  border: 1.5px solid rgba(91,192,235,0.25);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.sq-section-title { font-size: 13px; font-weight: 800; color: var(--sky-dark); }
+.sq-section-desc  { font-size: 12px; color: var(--t2); line-height: 1.5; }
+
+/* ── Security Question Box (forgot flow) ── */
+.sq-question-box {
+  background: var(--banana-light);
+  border: 1.5px solid rgba(253,231,76,0.5);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.sq-q-label { font-size: 11px; font-weight: 700; color: var(--t3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.sq-q-text  { font-size: 15px; font-weight: 700; color: var(--t1); line-height: 1.4; }
+
+/* ── Forgot Steps Indicator ── */
+.forgot-steps {
+  display: flex; align-items: center;
+  margin-bottom: 22px; gap: 0;
+}
+.fstep        { display: flex; flex-direction: column; align-items: center; gap: 5px; flex-shrink: 0; }
+.fstep-dot    { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-raised); border: 2px solid var(--border-md); color: var(--t3); font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+.fstep-label  { font-size: 10px; font-weight: 700; color: var(--t3); text-align: center; white-space: nowrap; }
+.fstep.active .fstep-dot  { background: var(--terra); border-color: var(--terra); color: white; box-shadow: 0 2px 8px rgba(229,89,52,0.4); }
+.fstep.active .fstep-label{ color: var(--terra); }
+.fstep.done   .fstep-dot  { background: var(--green); border-color: var(--green); color: white; }
+.fstep.done   .fstep-label{ color: var(--green-dark); }
+.fstep-line   { flex: 1; height: 2px; background: var(--border-md); margin: 0 4px; margin-bottom: 18px; min-width: 20px; transition: background 0.3s; }
+.fstep-line.done { background: var(--green); }
+
+.sq-note { font-size: 11px; color: var(--t3); }
+
 .auth-form { display: flex; flex-direction: column; gap: 14px; }
 
 .afield { display: flex; flex-direction: column; gap: 6px; }
 .afield label { font-size: 12px; font-weight: 700; color: var(--t2); text-transform: uppercase; letter-spacing: 0.5px; }
-.afield input {
+.afield input, .afield select {
   background: var(--bg-raised); border: 1.5px solid var(--border-md);
   border-radius: 8px; padding: 11px 14px;
   color: var(--t1); font-family: 'Nunito', sans-serif; font-size: 14px;
   outline: none; transition: border-color 0.2s, box-shadow 0.2s;
 }
+.afield select { cursor: pointer; }
 .afield input::placeholder { color: var(--t3); }
-.afield input:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(91,192,235,0.2); }
+.afield input:focus, .afield select:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(91,192,235,0.2); }
 
 .link-btn { background: none; border: none; color: var(--sky-dark); font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Nunito', sans-serif; text-align: right; width: 100%; margin-top: -6px; }
 .link-btn:hover { text-decoration: underline; }
@@ -406,12 +627,13 @@ html, body, #root {
 .ff { display: flex; flex-direction: column; gap: 6px; }
 .ff label  { font-size: 11px; font-weight: 700; color: var(--t2); text-transform: uppercase; letter-spacing: 0.5px; }
 req { color: var(--terra); font-style: normal; }
-.ff input, .ff textarea {
+.ff input, .ff textarea, .ff select {
   background: var(--bg-raised); border: 1.5px solid var(--border-md);
   border-radius: 8px; padding: 10px 12px;
   color: var(--t1); font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 500;
   outline: none; transition: border-color 0.2s, box-shadow 0.2s; resize: vertical;
 }
+.ff select { cursor: pointer; }
 .ff input::placeholder, .ff textarea::placeholder { color: var(--t3); }
 .ff input:focus, .ff textarea:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(91,192,235,0.18); background: white; }
 
