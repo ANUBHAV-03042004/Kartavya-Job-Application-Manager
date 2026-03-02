@@ -395,6 +395,8 @@
 
 
 
+
+
 import React, { useState, useEffect } from 'react';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://kartavya-job-application-manager.onrender.com';
@@ -612,7 +614,8 @@ export default function Settings({ user, token, onLogout }) {
                       placeholder="Repeat" required minLength={6} autoComplete="new-password" />
                   </div>
                 </div>
-                <button type="submit" className="btn-gold" disabled={pwBusy}>
+                <button type="submit" className="btn-gold" disabled={pwBusy}
+                  style={{ width: 'auto', alignSelf: 'flex-start' }}>
                   {pwBusy ? <span className="spinner dark" /> : '🔑 Update Password'}
                 </button>
               </form>
@@ -651,7 +654,8 @@ export default function Settings({ user, token, onLogout }) {
                     onChange={e => setSq(s => ({ ...s, password: e.target.value }))}
                     placeholder="••••••••" required autoComplete="current-password" />
                 </div>
-                <button type="submit" className="btn-primary" disabled={sqBusy}>
+                <button type="submit" className="btn-primary" disabled={sqBusy}
+                  style={{ width: 'auto', alignSelf: 'flex-start' }}>
                   {sqBusy ? <span className="spinner white" /> : 'Save Security Question'}
                 </button>
               </form>
