@@ -15,13 +15,11 @@ const JobApplication = sequelize.define('JobApplication', {
   jobLink: { type: DataTypes.STRING },
   notes:   { type: DataTypes.TEXT   },
 
-  // Explicit timestamp columns — we manage these manually via hooks below.
-  // This avoids the "column does not exist" crash on existing Render/Postgres tables.
   createdAt: { type: DataTypes.DATE, allowNull: true, defaultValue: DataTypes.NOW },
   updatedAt: { type: DataTypes.DATE, allowNull: true, defaultValue: DataTypes.NOW },
 }, {
   tableName:  'job_applications',
-  timestamps: false,  // Sequelize won't auto-manage them; we handle via hooks
+  timestamps: false,  
   hooks: {
     // Set createdAt on first insert
     beforeCreate(instance) {

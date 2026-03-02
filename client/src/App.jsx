@@ -1,77 +1,3 @@
-// import React, { useState, useEffect } from 'react';
-// import AuthPage  from './auth/AuthPage';
-// import Dashboard from './components/Dashboard';
-// import './styles.css';
-
-// export default function App() {
-//   const [user,  setUser]  = useState(null);
-//   const [token, setToken] = useState(null);
-//   const [oauthError, setOauthError] = useState('');
-
-//   useEffect(() => {
-//     // ── Handle OAuth redirect: ?token=...&user=...&error=... ──────
-//     const params = new URLSearchParams(window.location.search);
-//     const urlToken = params.get('token');
-//     const urlUser  = params.get('user');
-//     const urlError = params.get('error');
-
-//     if (urlError) {
-//       setOauthError(
-//         urlError === 'google_failed' ? 'Google sign-in failed. Please try again.' :
-//         urlError === 'github_failed' ? 'GitHub sign-in failed. Please try again.' :
-//         'Sign-in failed. Please try again.'
-//       );
-//       // Clean URL
-//       window.history.replaceState({}, document.title, window.location.pathname);
-//     } else if (urlToken && urlUser) {
-//       try {
-//         const parsedUser = JSON.parse(decodeURIComponent(urlUser));
-//         setToken(urlToken);
-//         setUser(parsedUser);
-//         localStorage.setItem('kv_token', urlToken);
-//         localStorage.setItem('kv_user', JSON.stringify(parsedUser));
-//       } catch {}
-//       // Clean URL so token isn't sitting in the address bar
-//       window.history.replaceState({}, document.title, window.location.pathname);
-//       return;
-//     }
-
-//     // ── Normal session restore from localStorage ──────────────────
-//     try {
-//       const t = localStorage.getItem('kv_token');
-//       const u = localStorage.getItem('kv_user');
-//       if (t && u) { setToken(t); setUser(JSON.parse(u)); }
-//     } catch {}
-//   }, []);
-
-//   const handleAuth = ({ token, user }) => {
-//     setToken(token); setUser(user);
-//     localStorage.setItem('kv_token', token);
-//     localStorage.setItem('kv_user', JSON.stringify(user));
-//   };
-
-//   const handleLogout = () => {
-//     setToken(null); setUser(null);
-//     localStorage.removeItem('kv_token');
-//     localStorage.removeItem('kv_user');
-//   };
-
-//   const updateUser = (u) => {
-//     setUser(u);
-//     localStorage.setItem('kv_user', JSON.stringify(u));
-//   };
-
-//   if (!user || !token)
-//     return <AuthPage onAuthSuccess={handleAuth} oauthError={oauthError} />;
-
-//   return <Dashboard user={user} token={token} onLogout={handleLogout} onUserUpdate={updateUser} />;
-// }
-
-
-
-
-
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import AuthPage  from './auth/AuthPage';
 import Dashboard from './components/Dashboard';
@@ -80,7 +6,7 @@ import './styles.css';
 // ── Idle logout ────────────────────────────────────────────────────
 // 45 minutes of inactivity → auto-logout
 // "Activity" = any mouse move, click, keypress, scroll, or touch
-const IDLE_MS = 45 * 60 * 1000; // 45 minutes in ms
+const IDLE_MS = 45 * 60 * 1000; 
 
 export default function App() {
   const [user,       setUser]       = useState(null);
@@ -91,7 +17,7 @@ export default function App() {
   const idleTimer   = useRef(null);
   const isLoggedIn  = useRef(false);
 
-  // ── Logout ────────────────────────────────────────────────────────
+
   const handleLogout = useCallback(() => {
     setToken(null);
     setUser(null);
@@ -102,26 +28,25 @@ export default function App() {
     clearTimeout(idleTimer.current);
   }, []);
 
-  // ── Idle timer management ─────────────────────────────────────────
+
   const resetIdleTimer = useCallback(() => {
     if (!isLoggedIn.current) return;
     clearTimeout(idleTimer.current);
-    // Persist last-active timestamp so the tab can detect idle even after
-    // being closed and reopened (e.g. user leaves overnight)
+
     localStorage.setItem('kv_last_active', Date.now().toString());
     idleTimer.current = setTimeout(() => {
       if (isLoggedIn.current) handleLogout();
     }, IDLE_MS);
   }, [handleLogout]);
 
-  // ── Attach / detach activity listeners ───────────────────────────
+
   useEffect(() => {
-    if (!token) return;                    // only when logged in
+    if (!token) return;            
     isLoggedIn.current = true;
 
     const events = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
     events.forEach(e => window.addEventListener(e, resetIdleTimer, { passive: true }));
-    resetIdleTimer();                      // start the timer immediately on login
+    resetIdleTimer();                   
 
     return () => {
       events.forEach(e => window.removeEventListener(e, resetIdleTimer));
@@ -129,20 +54,19 @@ export default function App() {
     };
   }, [token, resetIdleTimer]);
 
-  // ── Check stale session on page load ─────────────────────────────
-  // If the user left the page open for >45 min without activity, log them out
+
   const checkStaleSession = () => {
     const lastActive = localStorage.getItem('kv_last_active');
     if (lastActive && Date.now() - parseInt(lastActive, 10) > IDLE_MS) {
       localStorage.removeItem('kv_token');
       localStorage.removeItem('kv_user');
       localStorage.removeItem('kv_last_active');
-      return false;  // session expired
+      return false;  
     }
     return true;
   };
 
-  // ── Bootstrap: handle OAuth redirect or restore session ──────────
+
   useEffect(() => {
     const params   = new URLSearchParams(window.location.search);
     const urlToken = params.get('token');
@@ -158,7 +82,7 @@ export default function App() {
       window.history.replaceState({}, document.title, window.location.pathname);
 
     } else if (urlToken && urlUser) {
-      // Fresh OAuth redirect — treat as fresh activity
+  
       try {
         const parsedUser = JSON.parse(decodeURIComponent(urlUser));
         setToken(urlToken);
@@ -171,7 +95,6 @@ export default function App() {
       return;
     }
 
-    // Normal page load — restore session only if not stale
     try {
       const t = localStorage.getItem('kv_token');
       const u = localStorage.getItem('kv_user');
@@ -182,7 +105,6 @@ export default function App() {
     } catch {}
   }, []);
 
-  // ── Auth success (email login/signup) ─────────────────────────────
   const handleAuth = ({ token, user }) => {
     setToken(token);
     setUser(user);
@@ -191,7 +113,7 @@ export default function App() {
     localStorage.setItem('kv_last_active', Date.now().toString());
   };
 
-  // ── Update user object (called from Settings) ─────────────────────
+
   const updateUser = (u) => {
     setUser(u);
     localStorage.setItem('kv_user', JSON.stringify(u));
