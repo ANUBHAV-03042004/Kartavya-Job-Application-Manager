@@ -24,7 +24,7 @@ app.use(cors({
 app.use(express.json());
 app.use(passport.initialize());
 
-app.use('/api/auth',             require('./routes/Auth'));
+app.use('/api/auth',require('./routes/Auth'));
 app.use('/api/job-applications', require('./routes/JobApplication'));
 
 // ── Add missing columns safely before sync ───────────────────────────────────
