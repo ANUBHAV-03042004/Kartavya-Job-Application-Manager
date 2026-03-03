@@ -318,7 +318,6 @@
 
 
 
-
 import React, { useState, useEffect } from 'react';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'https://kartavya-job-application-manager.onrender.com';
@@ -346,12 +345,10 @@ const getAvColor = (str = 'U') => AV_COLORS[str.charCodeAt(0) % AV_COLORS.length
 
 export default function Settings({ user, token, onLogout }) {
 
-  // ── Always fetch /me from the server on mount ─────────────────────────────
-  // This gives us the REAL oauthProvider value straight from the database,
-  // completely bypassing any stale localStorage data.
   const [meUser,    setMeUser]    = useState(null);
   const [meLoading, setMeLoading] = useState(true);
 
+  // Always fetch /me on mount — gets the real DB values, bypasses stale localStorage
   useEffect(() => {
     fetch(`${API}/api/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -361,22 +358,20 @@ export default function Settings({ user, token, onLogout }) {
       .catch(() => { setMeUser(user); setMeLoading(false); });
   }, [token]);
 
-  // u = ground-truth user from server; falls back to prop while loading
   const u = meUser || user;
 
-  // isOAuth is derived ONLY from the server /me response.
-  // oauthProvider is 'google' | 'github' for OAuth, null for email users.
-  // isOAuth checks BOTH oauthProvider AND hasPassword.
-  // hasPassword===false is the definitive signal for an OAuth-only account.
-  // This prevents corrupted records (oauthProvider set but password also exists)
-  // from hiding the password/security-question sections.
-  //   Email account  -> oauthProvider:null,     hasPassword:true  -> isOAuth:false (show all)
-  //   OAuth account  -> oauthProvider:'google', hasPassword:false -> isOAuth:true  (hide pw sections)
-  //   Corrupted      -> oauthProvider:'google', hasPassword:true  -> isOAuth:false (safe fallback)
-  const isOAuth      = !!u?.oauthProvider && u?.hasPassword === false;
+  // ── THE ONLY RULE ─────────────────────────────────────────────────────────
+  // isOAuth = the user has NO local password hash in the database.
+  // hasPassword comes from userDTO: !!u.password (true for email, false for Google/GitHub)
+  // This is the only signal we need. oauthProvider is only used for display.
+  //
+  //   Email user  → hasPassword: true  → isOAuth: false → show Change PW + Security Q
+  //   Google user → hasPassword: false → isOAuth: true  → hide  Change PW + Security Q
+  //   GitHub user → hasPassword: false → isOAuth: true  → hide  Change PW + Security Q
+  // ─────────────────────────────────────────────────────────────────────────
+  const isOAuth      = u?.hasPassword === false;
   const providerName = u?.oauthProvider || 'OAuth';
 
-  // ── Form state ────────────────────────────────────────────────────────────
   const [pw,     setPw]     = useState({ current: '', next: '', confirm: '' });
   const [pwMsg,  setPwMsg]  = useState({ type: '', text: '' });
   const [pwBusy, setPwBusy] = useState(false);
@@ -392,7 +387,6 @@ export default function Settings({ user, token, onLogout }) {
 
   const hdr = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
-  // ── Change password (email users only) ───────────────────────────────────
   const changePw = async (e) => {
     e.preventDefault();
     if (pw.next !== pw.confirm) { setPwMsg({ type: 'error', text: "Passwords don't match" }); return; }
@@ -411,7 +405,6 @@ export default function Settings({ user, token, onLogout }) {
     finally { setPwBusy(false); }
   };
 
-  // ── Update security question (email users only) ───────────────────────────
   const updateSq = async (e) => {
     e.preventDefault();
     if (!sq.answer.trim()) { setSqMsg({ type: 'error', text: 'Please provide an answer' }); return; }
@@ -434,7 +427,6 @@ export default function Settings({ user, token, onLogout }) {
     finally { setSqBusy(false); }
   };
 
-  // ── Delete account ────────────────────────────────────────────────────────
   const deleteAcc = async () => {
     if (!isOAuth && !delPw) { setDelMsg({ type: 'error', text: 'Enter your password' }); return; }
     setDelBusy(true); setDelMsg({ type: '', text: '' });
@@ -449,12 +441,10 @@ export default function Settings({ user, token, onLogout }) {
     } catch (e) { setDelMsg({ type: 'error', text: e.message }); setDelBusy(false); }
   };
 
-  // ── Avatar ────────────────────────────────────────────────────────────────
   const initials = (u?.name || u?.email || 'U')[0].toUpperCase();
   const avBg     = getAvColor(initials);
   const avText   = avBg === '#F3DE2C' ? '#000' : '#fff';
 
-  // Loading skeleton
   if (meLoading) return (
     <div>
       <div className="view-header">
@@ -497,6 +487,7 @@ export default function Settings({ user, token, onLogout }) {
                   Member since {new Date(u?.createdAt || Date.now())
                     .toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                 </div>
+                {/* OAuth badge — only when hasPassword is false */}
                 {isOAuth && (
                   <div style={{
                     marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -512,8 +503,7 @@ export default function Settings({ user, token, onLogout }) {
           </div>
         </div>
 
-        {/* ══ CHANGE PASSWORD — email users only ═══════════════════════════════
-            OAuth users manage their password through Google/GitHub, not here   */}
+        {/* ══ CHANGE PASSWORD — email users only (hasPassword: true) ═══════════ */}
         {!isOAuth && (
           <div className="s-section">
             <div className="s-head" style={{ background: HEAD.password, borderBottom: '2px solid rgba(0,0,0,0.1)' }}>
@@ -552,9 +542,7 @@ export default function Settings({ user, token, onLogout }) {
           </div>
         )}
 
-        {/* ══ SECURITY QUESTION — email users only ═════════════════════════════
-            OAuth users (Google/GitHub) recover accounts through their provider,
-            so they don't need a security question at all                        */}
+        {/* ══ SECURITY QUESTION — email users only (hasPassword: true) ═════════ */}
         {!isOAuth && (
           <div className="s-section">
             <div className="s-head" style={{ background: HEAD.security, borderBottom: '2px solid rgba(0,0,0,0.1)' }}>
